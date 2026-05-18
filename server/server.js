@@ -509,7 +509,7 @@ function parseDocument(text, uri) {
 
   const namespacePattern = /^\s*namespace\s+([A-Za-z_][A-Za-z0-9_]*)/;
   const classLikePattern = /^\s*(class|struct|union|object)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*([^/{]+))?/;
-  const enumPattern = /^\s*enum\s+([A-Za-z_][A-Za-z0-9_]*)/;
+  const enumPattern = /^\s*enum(?:\s+([A-Za-z_][A-Za-z0-9_]*))?/;
   const constPattern = /^\s*const\s+[A-Za-z_][A-Za-z0-9_\s\*]*\s+([A-Za-z_][A-Za-z0-9_]*)\s*(\[\])?\s*=/;
   let pendingFunction = null;
 
@@ -556,7 +556,8 @@ function parseDocument(text, uri) {
   function maybeActivatePendingEnum(lineText) {
     if (pendingEnum && lineText.includes('{')) {
       enumContexts.push({
-        name: pendingEnum,
+        name: pendingEnum.name || null,
+        isAnonymous: !pendingEnum.name,
         depth: braceDepth + 1
       });
       pendingEnum = null;
@@ -678,36 +679,41 @@ function parseDocument(text, uri) {
 
       const enumMatch = analysisLine.match(enumPattern);
       if (enumMatch) {
-        const name = enumMatch[1];
-        const character = captureStart(analysisLine, enumMatch[0], name);
+        const name = enumMatch[1] || null;
         const owner = currentOwner();
-        const def = createDefinition(uri, i, character, trimmed, SymbolKind.Enum, documentation, owner);
-        addDefinition(name, def, SymbolKind.Enum);
-        knownTypes.add(name);
-        if (owner) {
-          ensureMapEntry(membersByOwner, owner).set(name, def);
-        }
-        if (!enumMembersByType.has(name)) {
-          enumMembersByType.set(name, new Map());
+        if (name) {
+          const character = captureStart(analysisLine, enumMatch[0], name);
+          const def = createDefinition(uri, i, character, trimmed, SymbolKind.Enum, documentation, owner);
+          addDefinition(name, def, SymbolKind.Enum);
+          knownTypes.add(name);
+          if (owner) {
+            ensureMapEntry(membersByOwner, owner).set(name, def);
+          }
+          if (!enumMembersByType.has(name)) {
+            enumMembersByType.set(name, new Map());
+          }
         }
         if (analysisLine.includes('{')) {
-          enumContexts.push({ name, depth: braceDepth + 1 });
+          enumContexts.push({ name, isAnonymous: !name, depth: braceDepth + 1 });
         } else {
-          pendingEnum = name;
+          pendingEnum = { name };
         }
       }
 
       if (enumContexts.length) {
-        const currentEnum = enumContexts[enumContexts.length - 1].name;
+        const currentEnum = enumContexts[enumContexts.length - 1];
+        const enumName = currentEnum.name;
         const enumItemMatch = analysisTrimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s*=\s*[^,}]+)?\s*,?\s*$/);
         if (enumItemMatch) {
           const memberName = enumItemMatch[1];
           const character = captureStart(analysisLine, analysisTrimmed, memberName);
-          const detail = `${currentEnum} ${memberName}`;
-          const def = createDefinition(uri, i, character, detail, SymbolKind.Constant, documentation, currentEnum);
+          const detail = enumName ? `${enumName} ${memberName}` : `enum ${memberName}`;
+          const def = createDefinition(uri, i, character, detail, SymbolKind.Constant, documentation, enumName || null);
           addDefinition(memberName, def, SymbolKind.Constant);
-          ensureMapEntry(enumMembersByType, currentEnum).set(memberName, def);
-          ensureMapEntry(membersByOwner, currentEnum).set(memberName, def);
+          if (enumName) {
+            ensureMapEntry(enumMembersByType, enumName).set(memberName, def);
+            ensureMapEntry(membersByOwner, enumName).set(memberName, def);
+          }
         }
       }
 
@@ -1621,7 +1627,7 @@ function getLineExpressionDepths(lines) {
 
 function getEnumLineFlags(lines) {
   const flags = new Array(lines.length).fill(false);
-  const enumPattern = /^\s*enum\s+[A-Za-z_][A-Za-z0-9_]*/;
+  const enumPattern = /^\s*enum\b(?:\s+[A-Za-z_][A-Za-z0-9_]*)?/;
   let braceDepth = 0;
   let pendingEnum = false;
   let enumDepth = null;
