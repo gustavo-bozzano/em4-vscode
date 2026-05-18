@@ -262,7 +262,7 @@ function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwne
   if (!text || text.includes('(')) return;
   if (/^(public|private|protected)\s*:/.test(text)) return;
 
-  const memberDecl = text.match(/^(?:(?:static|const)\s+)*([A-Za-z_][A-Za-z0-9_:<>]*)\s+(.+?)\s*;?$/);
+  const memberDecl = text.match(/^(?:(?:static|const)\s+)*(?:(?:class|struct|object)\s+)?([A-Za-z_][A-Za-z0-9_:<>]*)\s+(.+?)\s*;?$/);
   if (!memberDecl) return;
 
   const typeName = memberDecl[1];
@@ -654,10 +654,14 @@ function parseDocument(text, uri) {
         const character = captureStart(analysisLine, classLikeMatch[0], name);
         const detail = trimmed;
         const kind = SymbolKind.Class;
-        const def = createDefinition(uri, i, character, detail, kind, documentation, null);
+        const owner = currentOwner();
+        const def = createDefinition(uri, i, character, detail, kind, documentation, owner);
         addDefinition(name, def, kind);
         knownOwners.add(name);
         knownTypes.add(name);
+        if (owner) {
+          ensureMapEntry(membersByOwner, owner).set(name, def);
+        }
         const baseTypes = parseBaseTypes(classLikeMatch[3] || '');
         if (baseTypes.length) {
           baseByType.set(name, baseTypes);
@@ -676,9 +680,13 @@ function parseDocument(text, uri) {
       if (enumMatch) {
         const name = enumMatch[1];
         const character = captureStart(analysisLine, enumMatch[0], name);
-        const def = createDefinition(uri, i, character, trimmed, SymbolKind.Enum, documentation, null);
+        const owner = currentOwner();
+        const def = createDefinition(uri, i, character, trimmed, SymbolKind.Enum, documentation, owner);
         addDefinition(name, def, SymbolKind.Enum);
         knownTypes.add(name);
+        if (owner) {
+          ensureMapEntry(membersByOwner, owner).set(name, def);
+        }
         if (!enumMembersByType.has(name)) {
           enumMembersByType.set(name, new Map());
         }
@@ -946,9 +954,21 @@ function getBaseTypes(localIndex, owner) {
   return [];
 }
 
+function getOwnerCandidates(owner) {
+  if (!owner) return [];
+  const candidates = [owner];
+  if (owner.includes('::')) {
+    const unqualified = owner.split('::').pop();
+    if (unqualified && unqualified !== owner) {
+      candidates.push(unqualified);
+    }
+  }
+  return candidates;
+}
+
 function collectMembersForOwner(localIndex, owner) {
   const merged = new Map();
-  const queue = [owner];
+  const queue = getOwnerCandidates(owner);
   const visited = new Set();
 
   while (queue.length) {
@@ -1599,6 +1619,44 @@ function getLineExpressionDepths(lines) {
   });
 }
 
+function getEnumLineFlags(lines) {
+  const flags = new Array(lines.length).fill(false);
+  const enumPattern = /^\s*enum\s+[A-Za-z_][A-Za-z0-9_]*/;
+  let braceDepth = 0;
+  let pendingEnum = false;
+  let enumDepth = null;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] || '';
+    const trimmed = line.trim();
+
+    if (!pendingEnum && enumPattern.test(trimmed)) {
+      if (line.includes('{')) {
+        enumDepth = braceDepth + 1;
+      } else {
+        pendingEnum = true;
+      }
+    } else if (pendingEnum && line.includes('{')) {
+      enumDepth = braceDepth + 1;
+      pendingEnum = false;
+    }
+
+    if (enumDepth !== null && braceDepth >= enumDepth) {
+      flags[i] = true;
+    }
+
+    const opens = (line.match(/\{/g) || []).length;
+    const closes = (line.match(/\}/g) || []).length;
+    braceDepth += opens - closes;
+
+    if (enumDepth !== null && braceDepth < enumDepth) {
+      enumDepth = null;
+    }
+  }
+
+  return flags;
+}
+
 function lineRequiresTrailingSemicolon(lineText, previousLineText, nextLineText, depthInfo) {
   const trimmed = (lineText || '').trim();
   if (!trimmed) return false;
@@ -1863,11 +1921,12 @@ function validateTextDocument(document) {
   const analysisLines = sanitizeLinesForAnalysis(text);
   const validationLines = sanitizeLinesForValidation(text);
   const lineDepths = getLineExpressionDepths(validationLines);
+  const enumLineFlags = getEnumLineFlags(analysisLines);
   for (let i = 0; i < analysisLines.length; i += 1) {
     const sanitized = analysisLines[i];
     const validationLine = validationLines[i] || '';
 
-    if (lineRequiresTrailingSemicolon(
+    if (!enumLineFlags[i] && lineRequiresTrailingSemicolon(
       validationLine,
       findPreviousMeaningfulLine(validationLines, i),
       findNextMeaningfulLine(validationLines, i),
