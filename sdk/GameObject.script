@@ -12,13 +12,13 @@ enum GameObjectType
 // Enumeration FloorPlacement.
 enum FloorPlacement
 {
-	PLACEMENT_NONE,				// frei dreh- und positionierbar
-	PLACEMENT_AXISALIGNED,		// Objekt wird nicht gedreht, Pivotpunkt mit Offset entscheidet die Höhe
-	PLACEMENT_BOXALIGNED,			// Objekt frei drehbar, Boundingbox-Auflagepunkte mit Offset entscheiden über Höhe
-	PLACEMENT_ALIGNED_CORNERS,	// Ecken der Boundingbox entscheiden über Höhe und Ausrichtung, unterste Seite der bbop zählt
-	PLACEMENT_ALIGNED_SAMPLED,	// genauer als boundingcorners, zeitaufwendiger
-	PLACEMENT_PHYSICS,			// physik benutzen. Nicht im Game möglich!
-	PLACEMENT_CUSTOM_PLACEMENT	// placement wird von abgeleiteter Klasse berechnet (e.g. Person, Vehicle)
+	PLACEMENT_NONE,				// freely rotatable and positionable
+	PLACEMENT_AXISALIGNED,		// object is not rotated, pivot point with offset decides the height
+	PLACEMENT_BOXALIGNED,		// object is freely rotatable, bounding box support points with offset decide the height
+	PLACEMENT_ALIGNED_CORNERS,	// corners of the bounding box decide the height and orientation, bottom side of the bbop counts
+	PLACEMENT_ALIGNED_SAMPLED,	// more accurate than bounding corners, time-consuming
+	PLACEMENT_PHYSICS,			// use physics. Not possible in the game!
+	PLACEMENT_CUSTOM_PLACEMENT	// placement is calculated by derived class (e.g. Person, Vehicle)
 };
 
 // Enumeration PhysicCollisionMode.
