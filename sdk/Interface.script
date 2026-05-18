@@ -1,0 +1,224 @@
+﻿// Vehicle order groups used by the interface navigator.
+enum OrderGroupID
+{
+	GROUP_FIREDEPT,
+	GROUP_POLICE,
+	GROUP_AMBULANCE,
+	GROUP_TEC
+};
+
+// Interface control API for mission UI, tutorial overlays, and navigator interactions.
+namespace ScriptInterface
+{
+	// Close the objectives panel.
+	void CloseObjectives();
+	
+	// Set current mission name shown in the UI.
+	void SetMission(const char* mission_);
+
+	// Disable map UI interaction.
+	void DisableMap(bool sleep_ = true);
+	// Disable radar UI interaction.
+	void DisableRadar(bool sleep_ = true);
+	// Disable navigator UI interaction.
+	void DisableNavigator(bool sleep_ = true);
+	// Disable info bar UI interaction.
+	void DisableInfoBar(bool sleep_ = true);
+	// Disable vehicle browser UI interaction.
+	void DisableVehicleBrowser(bool sleep_ = true);
+
+	// Show map.
+	void ShowMap();
+	// Hide map.
+	void HideMap();
+	// Show radar.
+	void ShowRadar();
+	// Open radar.
+	void OpenRadar();
+	// Hide radar.
+	void HideRadar();
+	// Show navigator.
+	void ShowNavigator();
+	// Open navigator.
+	void OpenNavigator();
+	// Hide navigator.
+	void HideNavigator();
+	// Show info bar.
+	void ShowInfoBar();
+	// Open info bar.
+	void OpenInfoBar();
+	// Hide info bar.
+	void HideInfoBar();
+	// Show vehicle browser.
+	void ShowVehicleBrowser();
+	// Hide vehicle browser.
+	void HideVehicleBrowser();
+	
+	// Show briefing.
+	void ShowBriefing();
+	// Hide briefing.
+	void HideBriefing();
+	// Show tips.
+	void ShowTips();
+	// Open tips.
+	void OpenTips();
+	// Hide tips.
+	void HideTips();
+	// Show action bar.
+	void ShowActionBar();
+	// Open action bar.
+	void OpenActionBar();
+	// Hide action bar.
+	void HideActionBar();
+	// Show objectives.
+	void ShowObjectives();
+	// Hide objectives.
+	void HideObjectives();
+
+	// Open objectives.
+	void OpenObjectives();
+
+	// Enable tutorial mode.
+	void EnableTutorialMode();
+	// Disable tutorial mode.
+	void DisableTutorialMode();
+
+	// Show tutorial overlay with visible background.
+	void ShowVisibleTutorialOverlay();
+	// Show tutorial overlay with transparent background.
+	void ShowInvisibleTutorialOverlay();
+	// Hide tutorial overlay.
+	void HideTutorialOverlay();
+	// Hide interface.
+	void HideInterface();
+	// Resume from Hide Interface.
+	void ResumeFromHideInterface();
+
+	// Show tutorial message with optional voice line.
+	void ShowTutorialMessage(const char *MessageID_, const char *VoiceMessageURL_, float y_ = -1.0f);
+	// Return true if tutorial message window is open.
+	bool IsTutorialMessageOpen();
+
+	// Show tutorial instruction window and return sound reference.
+	int ShowTutorialInstruction(const char *instructionID_, int soundRef = -1, float x_ = -1.0f, float y_ = -1.0f);
+	// Close tutorial instruction window; also invoked by ShowTutorialMessage().
+	void CloseTutorialInstruction(int soundRef=-1);
+	// Show main menu.
+	void ShowMainMenu();
+
+	// Show a notice popup.
+	void ShowNotice(const char *textName_);
+	// Hide the notice popup.
+	void HideNotice();
+	// Return true if notice popup is hidden.
+	bool NoticeIsHidden();
+	// Return true if the user confirmed with OK.
+	bool DidUserHitOK();
+
+	// Blink navigator open/close button.
+	void BlinkNavigatorOpenCloseButton(bool Blink_);
+	// Blink navigator objectives button.
+	void BlinkNavigatorObjectivesButton(bool Blink_);
+	// Blink objectives open/close button.
+	void BlinkObjectivesOpenCloseButton(bool Blink_);
+	// Blink navigator fire department button.
+	void BlinkNavigatorFireDepartmentButton(bool Blink_);
+	// Enable or disable navigator fire department button.
+	void EnableNavigatorFireDepartmentButton(bool enable_);
+	// Blink navigator ambulance button.
+	void BlinkNavigatorAmbulanceButton(bool Blink_);
+	// Enable or disable navigator ambulance button.
+	void EnableNavigatorAmbulanceButton(bool enable_);
+	// Blink send vehicle button.
+	void BlinkSendVehicleButton(bool Blink_);
+	// Blink send vehicle target button.
+	void BlinkSendVehicleTargetButton(bool Blink_);
+	// Blink a fire department vehicle entry.
+	void BlinkFireDepartmentVehicle(const char *VehicleName_, bool Blink_);
+	// Blink an ambulance vehicle entry.
+	void BlinkAmbulanceVehicle(const char *VehicleName_, bool Blink_);
+	// Blink crew button.
+	void BlinkCrewButton(const char *CrewName_, bool Blink_);
+	// Return true if navigator window is open.
+	bool IsNavigatorWindowOpen();
+	// Return true if objectives window is open.
+	bool IsObjectivesWindowOpen();
+	// Return true if fire department page is open.
+	bool IsFireDepartmentWindowOpen();
+	// Return true if ambulance page is open.
+	bool IsAmbulanceWindowOpen();
+	// Return true if message ticker is open.
+	bool IsMessageTickerOpen();
+	// Set message ticker scroll speed.
+	void SetMessageTickerSpeed(float speed_);
+	// Return true if fire department vehicle is selected.
+	bool IsFireDepartmentVehicleSelected(const char *VehicleName_);
+	// Return true if ambulance vehicle is selected.
+	bool IsAmbulanceVehicleSelected(const char *VehicleName_);
+	// Return true if target OK button is blinking.
+	bool IsTargetOkButtonBlinking();
+	// Unlock action button by index.
+	void UnlockActionButton(int index_);
+	// Lock objectives window.
+	void LockObjectivesWindow();
+	// Blink action button by index.
+	void BlinkActionButton(int index_);
+	// Blink action button by command name.
+	void BlinkActionButton(const char *name_);
+	// Enable or disable blinking on action buttons.
+	void SetEnableActionButtonsBlinking(bool enable_);	
+	// Return true if equipment menu is open.
+	bool IsEquipmentMenuOpen();
+	// Blink equipment button by index.
+	void BlinkEquipmentButton(int index_);
+	// Blink equipment button by command name.
+	void BlinkEquipmentButton(const char *name_);
+	// Return true if command is currently selected.
+	bool IsCurrentCommand(const char* name_);
+	// Set current active command.
+	void SetCurrentCommand(const char* name_);
+	// Enable showing vehicle page after placing an order.
+	void SetShowVehiclePageAfterOrder(bool enable_);
+	// Return true if vehicle was ordered.
+	bool IsVehicleOrdered(const char *name_);
+	// Return true if vehicle was ordered with a target.
+	bool IsVehicleOrderedWithTarget(const char *name_);
+	// Enable or disable vehicle browser autohide.
+	void SetVehicleBrowserAutohide(bool autohide_);
+	// Enable opening and closing of base window.
+	void EnableOpenCloseBaseWindow();
+	// Show briefing.
+	void ShowBriefing();
+
+	// Keep base window open.
+	void SetBaseWindowKeepOpen(bool keepOpen_);
+
+	// Unlock objectives window.
+	void UnlockObjectivesWindow();
+	// Unlock exit.
+	void UnlockExit();
+
+	// Blink popup menu command entry.
+	void BlinkPopupMenuCommand(const char *CommandName_, bool Blink_);
+
+	// Return number of crew members added to ordered vehicles.
+	int GetNumVehicleCrewMembersAdded();
+
+	// Close all vehicle browser windows.
+	void CloseAllVehicleBrowsers();
+	// Get current mouse position.
+	void GetMousePos(float &x_, float &y_);
+	// Return whether order target mode is active.
+	bool GetOrderTargetMode();
+
+	// Show message ticker text for all players.
+	void ShowMessageTickerTextForAll(const char *text_, float red_=1.0f, float green_=1.0f, float blue_=1.0f);
+	// Show message ticker text for one specific player object.
+	void ShowMessageTickerTextForSinglePlayer(const GameObject* obj_, const char *text_, float red_=1.0f, float green_=1.0f, float blue_=1.0f);
+
+	// Set radar texture.
+	void SetRadarTexture(const char *filename_);
+	
+	// Show or hide mouse cursor.
+	void HideMouseCursor(bool hide_); 	
+};

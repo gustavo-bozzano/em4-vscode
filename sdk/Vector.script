@@ -1,0 +1,21 @@
+﻿// 3D vector value type used across world and API calls.
+class Vector
+{
+	float x, y, z;
+
+	// Construct a zero vector.
+	Vector();
+	// Construct a vector with explicit coordinates.
+	Vector(float x_, float y_, float z_);
+	// Copy-construct from another vector.
+	Vector(const Vector &V_);
+
+	// Set vector coordinates in place.
+	void Set(float x_, float y_, float z_);
+	// Return vector length.
+	float GetLen();
+	// Return normalized copy of this vector.
+	Vector GetNormal();
+};
+
+extern const Vector NULLVECTOR;

@@ -1,0 +1,314 @@
+﻿// Global game-level API: world queries, object creation, triggers, time, and mission utilities.
+namespace Game
+{
+	// Return all actors in the world.
+	ActorList GetActors();
+	// Return actors matching an exact name.
+	ActorList GetActors(const char *Name_);
+	// Return actors filtered by actor type.
+	ActorList GetActors(ActorType type_);
+	// Return a single actor by numeric ID.
+	Actor GetActor(int ID_);
+	// Return number of actors of a given type.
+	int GetNumActors(ActorType type_);
+	// Return number of injured people that are not on transport.
+	int GetNumInjuredPersonNotOnTransport();
+	
+	// Return all game objects.
+	GameObjectList GetGameObjects();
+	// Return game objects filtered by object type.
+	GameObjectList GetGameObjects(GameObjectType type_);
+	// Return game objects matching an exact name.
+	GameObjectList GetGameObjects(const char *Name_);
+	// Return game objects whose names start with a prefix.
+	GameObjectList GetGameObjectsWithPrefix(const char* Prefix_);
+	// Return currently selected game objects.
+	GameObjectList GetSelectedGameObjects();
+	// Return number of currently selected game objects.
+	int GetNumSelectedGameObjects();
+	// Return true if selection includes a paramedic carrying an injured person.
+	bool IsParamedicWithInjuredInSelection(GameObject *Caller_);
+
+	// Return all paramedics currently present in the world.
+	PersonList GetParamedics();
+	// Return all doctors currently present in the world.
+	PersonList GetDoctors();
+	// Return all firefighters currently present in the world.
+	PersonList GetFirefighters();
+	
+	// Create a generic game object from prototype and name.
+	GameObject CreateObject(const char* Prototype_, const char *Name_);
+	// Create a person from prototype and name.
+	Person CreatePerson(const char *Prototype_, const char *Name_);
+	// Create a vehicle from prototype and name.
+	Vehicle CreateVehicle(const char* Prototype_, const char *Name_);
+
+	// Remove and destroy a game object.
+	void RemoveGameObject(GameObject *obj_);
+	
+	// Execute a command on the caller.
+	bool ExecuteCommand(const char *Command_, GameObject *Caller_);
+	// Execute a command on the caller with an explicit target.
+	bool ExecuteCommand(const char *Command_, GameObject *Caller_, Actor *Target_);
+	
+	// Convert meters to internal world units.
+	float MetersToUnits(float Meters_);
+	// Convert internal world units to meters.
+	float UnitsToMeters(float Units_);
+	// Draw object-attached text marker.
+	void PrintObjectText(Actor &Obj_, const char *Text_);
+	
+	// Load a map by map name.
+	bool LoadMap(const char* MapName_);	
+	// Queue mission start by mission ID.
+	void ScheduleMissionStart(int Mission_, bool isNewMission_ = false);
+
+	// Spawn and play a particle emitter effect at world position.
+	void PlayEmitter(const char *File_, const Vector &Pos_);
+	// Return current simulation speed multiplier.
+	float GetGameSpeed();
+	// Set simulation speed multiplier.
+	void SetGameSpeed(float Speed_);
+	// Return duration of the previous simulation tick.
+	float GetLastTickDuration();
+
+	// Return real-world elapsed time independent from simulation speed.
+	float GetRealTime();
+	// Return current simulation time value.
+	float GetTime();
+
+	// Set default message group for subsequent UI messages.
+	void SetDefaultMessageGroup(const char* Default_);
+	// Show transient help text.
+	void ShowHelpText(const char *Text_, float Duration_ = -1.0f);
+	// Show help text in a dedicated window.
+	void ShowHelpTextWindow(const char *Text_, float Duration = -1.0f);
+	// Close the help text window.
+	void CloseHelpTextWindow();
+
+	// Collect obstacle candidates intersecting a named path.
+	bool CollectObstaclesOnPath(const char* path, GameObjectList &list);
+	// Collect obstacles in a trigger area with type filter.
+	bool CollectObstaclesOnTrigger(const char* trigger, GameObjectList &list, unsigned int typefilter_ = ACTOR_VEHICLE|ACTOR_PERSON|ACTOR_OBJECT);
+	// Collect obstacles in a virtual object area with type filter.
+	bool CollectObstaclesOnVirtualObject(const char* vobj, GameObjectList &list, unsigned int typefilter_ = ACTOR_VEHICLE|ACTOR_PERSON|ACTOR_OBJECT);
+	// Return whether any squad unit is inside a trigger.
+	bool IsSquadInTrigger(const char* trigger, unsigned int typefilter_ = ACTOR_PERSON|ACTOR_VEHICLE);
+	// Return whether a civilian is inside a trigger.
+	bool IsCivilianInTrigger(const char* trigger, unsigned int typefilter_ = ACTOR_PERSON, bool isInjured_=false);
+	// Return whether any squad unit is inside a named virtual object.
+	bool IsSquadInVirtualObject(const char* vobj);
+	// Return whether any civilian is inside a named virtual object.
+	bool IsCivilianInVirtualObject(const char* vobj);
+	// Return whether any burning object is inside a named virtual object.
+	bool IsBurningObjectInVirtualObject(const char* vobj);
+	// Hide all objects in list.
+	void HideObjects(const GameObjectList &list);
+	// Show all objects in list.
+	void ShowObjects(const GameObjectList &list);
+	// Return number of objects that currently have a given flag set.
+	int GetNrObjectsWithFlagSet(int flag_);
+
+	// Return true if any object has the given flag set.
+	bool ExistsObjectWithFlagSet(int flag_);
+	// Return true if any visible, non-fullburned object has the given flag set.
+	bool ExistsNormalObjectWithFlagSet(int flag_);
+	// Return true if a free landing stage exists (TFMB-specific variant controlled by parameter).
+	bool ExistsFreeLandingStage(bool tfmb_);
+	// Return true if a free bridge installation point exists.
+	bool ExistsFreeBridgeInstallPoint();
+	// Return true if a free TFMB landing stage exists.
+	bool ExistsFreeTFMB();
+	// Return true if a free FMB landing stage exists.
+	bool ExistsFreeFMB();
+	// Return true if a free DLK installation position exists.
+	bool ExistsFreeDLKInstallPosition();
+	// Return true if an empty THW FGRR trailer is available.
+	bool ExistsEmptyFGRR_TRL();
+	// Return true if an empty THW FGRR towing vehicle is available.
+	bool ExistsEmptyFGRR_RL();
+	// Return true if at least one object can currently be cooled.
+	bool ExistsCoolableobject();
+	// Return true if at least one object can currently be extinguished.
+	bool ExistsExtinguishableObject();
+	// Return true if at least one drowning person exists.
+	bool ExistsDrowningPerson();
+	// Return true if at least one injured person exists.
+	bool ExistsInjuredPerson();
+	// Return true if at least one non-injured person exists.
+	bool ExistsNonInjuredPerson();
+	// Return true if at least one squad member is wounded.
+	bool ExistsWoundedSquad();
+	// Return true if at least one accessible house exists.
+	bool ExistsAccessibleHouse();
+	// Return true if at least one free rescue dog is available.
+	bool ExistsFreeRescueDog();
+	// Return true if a valid dive area exists.
+	bool ExistsDiveArea();
+	// Return true if any car currently contains an enclosed person.
+	bool ExistsCarWithEnclosedPerson();			
+	// Return true if at least one object can be cut open.
+	bool ExistsCutableObject();
+	// Return true if at least one locked house exists.
+	bool ExistsLockedHouse();
+	// Return true if at least one free hose connection exists.
+	bool ExistsFreeHoseConnection();
+	// Return true if at least one person can be questioned.
+	bool ExistsAskablePerson();
+	// Return true if a free DLK vehicle is available.
+	bool ExistsFreeDLK();
+	// Return true if at least one repairable vehicle exists.
+	bool ExistsRepairableCar();
+	// Return true if a valid house target exists for jump pad deployment.
+	bool ExistsHouseForJumpad();
+	// Return true if a jump pad is currently installed.
+	bool ExistsInstalledJumppad();
+	// Return true if a roadblock is currently installed.
+	bool ExistsInstalledRoadblock();
+	// Return true if a free vehicle of type_ satisfies capacity constraints.
+	bool ExistsFreeVehicle(VehicleType type_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free vehicle of type_ or type2_ satisfies capacity constraints.
+	bool ExistsFreeVehicle(VehicleType type_, VehicleType type2_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free vehicle in the 3-type set satisfies capacity constraints.
+	bool ExistsFreeVehicle(VehicleType type_, VehicleType type2_, VehicleType type3_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free vehicle in the 4-type set satisfies capacity constraints.
+	bool ExistsFreeVehicle(VehicleType type_, VehicleType type2_, VehicleType type3_, VehicleType type4_, int minFreePassengers, int minFreeTransports);
+	// Return true if a free squad vehicle of type_ satisfies capacity constraints.
+	bool ExistsFreeSquadVehicle(VehicleType type_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free squad vehicle of type_ or type2_ satisfies capacity constraints.
+	bool ExistsFreeSquadVehicle(VehicleType type_, VehicleType type2_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free squad vehicle in the 3-type set satisfies capacity constraints.
+	bool ExistsFreeSquadVehicle(VehicleType type_, VehicleType type2_, VehicleType type3_, int minFreePassengers, int minFreeTransports);
+	// Return true if any free squad vehicle in the 4-type set satisfies capacity constraints.
+	bool ExistsFreeSquadVehicle(VehicleType type_, VehicleType type2_, VehicleType type3_, VehicleType type4_, int minFreePassengers, int minFreeTransports);
+
+	// Return true if a trigger is active and could be activated.
+	bool ActivateTrigger(const char *name);
+	// Deactivate a trigger by name.
+	bool DeactivateTrigger(const char *name);
+	// Activate a waiting point by name.
+	bool ActivateWaitingPoint(const char *name_);
+	// Deactivate a waiting point by name.
+	bool DeactivateWaitingPoint(const char *name_);
+	// Test whether a world position lies inside a trigger.
+	bool IsInTrigger(const char *name, const Vector &Pos_);
+	// Spawn area lights around a trigger volume.
+	void CreateAreaLightsAroundTrigger(const char *name_, const char *nameForLights_, float gap_);
+
+	// Activate named liquid simulation area.
+	bool ActivateLiquid(const char *name);
+	// Deactivate named liquid simulation area.
+	bool DeactivateLiquid(const char *name);
+
+	// Return true if world position is water.
+	bool IsWater(const Vector &Pos_, bool ignoreHeight_ = true);
+	// Return true if world position supports submerged actors.
+	bool IsSubmergible(const Vector &Pos_);
+
+	// Return current physics step counter.
+	int GetPhysicsStep();
+	// Return current simulation tick counter.
+	int GetTick();
+
+	// Search a free position around an object.
+	bool FindFreePosition(GameObject *obj_, Vector &Pos_, float radius_ = 100.0f);
+	// Search an available position around an object, optionally allowing house interiors.
+	bool FindAvailablePosition(GameObject *obj_, Vector &Pos_, float radius_ = 50.0f, bool allowHouses_ = true);
+	// Gather potential collisions around an actor within radius.
+	bool GetPotentialCollisions(Actor *obj_, ActorList &list_, float radius_, unsigned int typefilter_);
+
+	// Extinguish all active fires in the current map.
+	void ExtinguishAllFires();
+	
+	// Enable or disable scene lens effect.
+	void ActivateSceneLens(bool active_);
+
+	// Stop ambient sound instance by name.
+	void StopAmbientSound(const char* name_);
+	// Set ambient sound volume by ambient name entry.
+	void SetAmbientSoundVolumeByName(const char *name_, float volume_);
+	// Set ambient sound volume by sound resource path.
+	void SetAmbientSoundVolumeBySound(const char *sound_, float volume_);
+
+	// Enable or disable object selection globally.
+	void SetObjectsSelectable(bool enable_);
+	// Enable or disable camera map bounds blocking.
+	void SetMapBoundsBlockCamera(bool enable_);
+	// Force showing context menu regardless of default behavior.
+	void ForceShowContextMenu(bool enable_);
+	// Enable or disable multi-selection support.
+	void EnableMultiSelection(bool enable_);
+
+	// Return in-game clock as hour, minute, second.
+	void GetTime(int &hour_, int &minute_, int &second_);
+	// Set in-game clock values.
+	void SetTime(int hour_, int minute_, int second_);
+	// Return current in-game clock speed factor.
+	int GetTimeSpeed();
+	// Set in-game clock speed factor.
+	void SetTimeSpeed(int speed_);
+	// Return terrain ground height at world x/y.
+	float GetGroundHeight(float posx_, float posy_);
+	// Return floor/platform height at world x/y.
+	float GetFloorHeight(float posx_, float posy_);
+
+	// Draw a persistent debug line in the world.
+	void DrawPermanentLine(Vector &start, Vector &end, int R, int G, int B);
+
+	 // Return world position of current command cursor.
+ 	Vector GetCommandPos();
+	// Return current mission/game mode.
+	GameMode GetGameMode();
+
+	// Return true if name starts with provided prefix.
+	bool HasNamePrefix(const char* Name_, const char *Prefix_);
+	// Enable mission updates while game is paused.
+ 	void EnableUpdateMissionOnPause(bool enable_);
+
+	// Return true when current mode is freeplay.
+	bool IsFreeplay();
+	// Return true when running in multiplayer.
+	bool IsMultiplayer();
+	// Return true when current mode is campaign.
+	bool IsCampaign();
+	// Return true when current mode is mission.
+	bool IsMission();
+
+	// Add object to custom group.
+	void AddToGroup(GameObject *object_, int group_);
+	// Remove object from custom group.
+	bool RemoveFromGroup(GameObject *object_, int group_);
+	// Return whether object belongs to custom group.
+	bool IsInGroup(GameObject *object_, int group_);
+	
+	// Return number of injured people not on transport, optionally ignoring dead victims.
+	int GetNumInjuredPersonNotOnTransport(bool ignoreDead_ = false);
+	// Set navigator counter key used by mission logic.
+	void SetNavigatorCounter(const char* counter_);
+	// Get navigator counter key currently in use.
+	const char* GetNavigatorCounter();
+	// Return true if at least one animal can be picked up.
+	bool ExistsPickableAnimal();
+	// Read localized game string into output buffer.
+	bool GetGameString(const char *name_, char *buffer_, int maxcount_);
+	// Return true if homicide event is currently active.
+	bool IsHomicideEventRunning();
+	// Get maximum available parking space.
+	int GetMaxParkingSpace();
+	// Set maximum available parking space.
+	void SetMaxParkingSpace(int space_);
+	// Get global frequency factor for random events.
+	float GetGlobalEventFrequencyFactor();
+	// Set global frequency factor for random events.
+	void SetGlobalEventFrequencyFactor(float factor_);
+	// Get elapsed time since active player switch in multiplayer.
+	float GetTimeActivePlayerSwitchMP();
+	// Set elapsed time since active player switch in multiplayer.
+	void SetTimeActivePlayerSwitchMP(float time_);
+	// Show world event marker/text and return event ID.
+	int ShowEvent(const char* Text_, Vector Position_);
+	// Mark an event as finished and optionally provide success/reward result.
+	bool SetEventFinished(int eventID_, bool succesful_, int reward_);
+	// Return whether world position is acceptable for event placement.
+	bool IsPositionAcceptable(Vector Position_);	
+};

@@ -1,0 +1,97 @@
+﻿// Open house API for door state, entrances, and jumper pad interactions.
+class OpenHouse : public GameObject
+{
+		// Construct an invalid open-house wrapper.
+		OpenHouse();
+		// Copy-construct from another open-house wrapper.
+		OpenHouse(const OpenHouse& Obj_);
+		// Wrap an existing actor as an open house.
+		OpenHouse(const Actor* Act_);
+		// Wrap an existing game object as an open house.
+		OpenHouse(const GameObject* Obj_);
+		// Release this open-house wrapper.
+		~OpenHouse();
+
+		// Return true if this open house wrapper is valid.
+		virtual bool IsValid() const;
+		
+		// Return true if the open house is locked.
+		bool IsLocked(void) const;
+		// Return true if the open house is open.
+		bool IsOpen(void) const;
+		// Return true if the specified door is locked.
+		bool IsDoorLocked(int childID_) const;
+		// Open the specified door.
+		void OpenDoor(int childID_);
+		// Close the specified door.
+		void CloseDoor(int childID_);
+		// Return true if the ceiling is open.
+		bool IsCeilingOpen()const;
+		// Show or hide the ceiling and optionally control entrance visibility.
+		void ShowCeiling(bool show_, bool openEntrance_ = true, bool immediatelyClose_ = true) const;
+
+		// Close the open house.
+		void Close();
+
+		// Return entrance door child ID.
+		int GetEntranceDoorID(void) const;
+		
+		// Return world position of a door.
+		Vector GetDoorPosition(int childID_, bool front_) const;
+		// Return world position of the entrance.
+		Vector GetEntrancePosition(bool front_, float offset = 0.f) const;
+		
+		// Write world position of a door to x_, y_, z_.
+		void GetDoorPosition(int childID_, bool front_, float &x_, float &y_, float &z_) const;
+		// Write world position of the entrance to x_, y_, z_.
+		void GetEntrancePosition(bool front_, float &x_, float &y_, float &z_) const;
+
+		// Return true if childID_ identifies a door.
+		bool IsDoor(int childID_) const;
+		// Return true if childID_ identifies the entrance door.
+		bool IsEntranceDoor(int childID_) const;
+		// Enable or disable collision for a specific door.
+		void SetDoorCollision(int childID_, bool enable_);
+
+		// Return true if the building has a ground-level entrance.
+		bool HasGroundEntrance(void) const;
+
+		// Return number of squad persons inside.
+		int NumSquadPersonsInside() const;
+		// Return number of non-squad persons inside.
+		int NumNonSquadPersonsInside() const;
+
+		// Return squad persons currently inside.
+		PersonList GetSquadPersonsInside();
+		// Return non-squad persons currently inside.
+		PersonList GetNonSquadPersonsInside();
+
+		// Return true if a jumppad target exists.
+		bool HasJumppadTarget() const;
+		// Return jumppad target position.
+		Vector GetJumppadTarget() const;
+		// Write jumppad target position to x_, y_, z_.
+		void GetJumppadTarget(float &x_, float &y_, float &z_) const;
+ 
+		// Return true if a jump pad exists in any lifecycle state.
+		bool HasJumppad() const;
+		// Return true while jumppad is being installed.
+		bool IsJumppadInstalling() const;
+		// Return true if jumppad is installed.
+		bool IsJumppadInstalled() const;
+		// Return true while jumppad is being removed.
+		bool IsJumppadDeinstalling() const;
+		// Return jumppad actor ID.
+		int GetJumppadID() const;
+
+		// Collect in-house fire objects into list_.
+		bool GetInhouseFires(FireObjectList &list_);
+
+		// Enable or disable ceiling collision.
+		void SetCeilingCollision(bool enable_);
+		
+		// Return child object ID for a group.
+		int GetChildID(int groupID_) const;
+		// Refresh open/close state from underlying building state.
+		void UpdateOpenCloseState();
+};

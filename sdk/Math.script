@@ -1,0 +1,75 @@
+﻿// Math helper namespace with scalar and vector-related utility functions.
+namespace Math
+{
+	extern const int RANDMAX;
+	// Return the square root of f.
+	float sqrt(float f);
+	// Return i multiplied by itself.
+	int sqrti(int i);
+	// Return f multiplied by itself.
+	float sqr(float f);
+	// Return the Euclidean length of vector (x, y, z).
+	float VectorLen(float x, float y, float z);
+	// Normalize vector (x, y, z) in place.
+	void NormalizeVector(float &x, float &y, float &z);
+	// Return a pseudo-random integer in [0, RANDMAX].
+	int rand();
+	// Return the absolute value of i.
+	int abs(int i);
+	// Return arc-cosine of f (radians).
+	float acos(float f);
+	// Return arc-sine of f (radians).
+	float asin(float f);
+	// Return arc-tangent of f (radians).
+	float atan(float f);
+	// Return arc-tangent of f/g with quadrant awareness.
+	float atan2(float f, float g);
+	// Return cosine of f (radians).
+	float cos(float f);
+	// Return hyperbolic cosine of f.
+	float cosh(float f);
+	// Return e raised to f.
+	float exp(float f);
+	// Return absolute value of float f.
+	float fabs(float f);
+	// Return floating-point remainder of f/g.
+	float fmod(float f, float g);
+	// Return natural logarithm of f.
+	float log(float f);
+	// Return base-10 logarithm of f.
+	float log10(float f);
+	// Return f raised to power g.
+	float pow(float f, float g);
+	// Return sine of f (radians).
+	float sin(float f);
+	// Return hyperbolic sine of f.
+	float sinh(float f);
+	// Return tangent of f (radians).
+	float tan(float f);
+	// Return hyperbolic tangent of f.
+	float tanh(float f);
+	// Parse float value from string.
+	float atof(const char *s);
+	// Parse integer value from string.
+	int atoi(const char *s);
+	// Return the smallest integer value not less than f.
+	float ceil(float f);
+	// Return the largest integer value not greater than f.
+	float floor(float f);
+	// Return squared 2D distance between points.
+	float dist2(float x0, float y0, float x1, float y1);
+	// Return 2D distance between points.
+	float dist(float x0, float y0, float x1, float y1);
+	// Return squared 3D distance between points.
+	float dist2(float x0, float y0, float z0, float x1, float y1, float z1);
+	// Return 3D distance between points.
+	float dist(float x0, float y0, float z0, float x1, float y1, float z1);
+	// Rotate a vector by a 3x3 matrix.
+	void RotateVector(float &vectorx_, float &vectory_, float &vectorz_, const float *matrix3x3_);
+	// Compute cross product and write result to (cx, cy, cz).
+	void CrossProduct(float x, float y, float z, float &cx, float &cy, float &cz);
+	// Convert yaw/pitch/roll angles to a 3x3 matrix.
+	void EulerToMatrix(float yaw, float pitch, float roll, float *matrix3x3_);
+	// Multiply mat1_ by mat2_ and store result in mat1_.
+	void MultiplyMatrices(float *mat1_, const float *mat2_);
+};

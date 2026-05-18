@@ -1,0 +1,41 @@
+// SDK namespace System.
+﻿namespace System
+{
+	// Print a formatted message to the debug log.
+	void Print(const char *Fmt, ...);
+	// Print a formatted error message.
+	void Error(const char *Fmt, ...);
+	// Write a formatted log message.
+	void Log(const char *Fmt, ...);
+	// Write a formatted message to the log file.
+	void LogFile(const char *Fmt, ...);
+	// Break execution for debugging.
+	void Break();
+	// Sleep for Time milliseconds.
+	void Sleep(int Time);
+	// Return system tick count.
+	unsigned int GetTickCount();
+
+	// Access runtime environment variables.
+	int GetEnvInt(const char *Name);
+	// Return environment variable as string.
+	const char* GetEnvString(const char *Name);
+	// Return environment variable as float.
+	float GetEnvFloat(const char *Name);
+
+	// Set environment variable as integer.
+	bool SetEnv(const char *Name, int Value);
+	// Set environment variable as string.
+	bool SetEnv(const char *Name, const char *Value);
+	// Set environment variable as float.
+	bool SetEnv(const char *Name, float Value);
+
+	// Return graphics vendor string.
+	const char* GetGFXVendorString();
+	// Return supported graphics extensions string.
+	const char* GetGFXExtensionsString();
+	// Return graphics renderer string.
+	const char* GetGFXRendererString();
+	// Enable or disable a graphics feature flag.
+	void SetGFXFeatureFlag(const char *FlagName_, bool Value_);
+};

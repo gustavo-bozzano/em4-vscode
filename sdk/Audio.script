@@ -1,0 +1,40 @@
+﻿// Audio playback API for samples, soundtrack control, and texture video audio/video hooks.
+namespace Audio
+{
+	// Play a 2D sound sample and return its handle.
+	int PlaySample(const char *File_);
+	
+	// Play a 3D sound sample at Pos_ and return its handle.
+	int PlaySample3D(const char *File_, const Vector &Pos_, bool looping_ = false);
+	// Move an existing 3D sound sample to Pos_.
+	void PlaySample3D(int ref_, const Vector &Pos_, bool looping_ = false);
+	// Play one 3D sample and replace another at the same position.
+	int PlaySample3DAndReplace(const char* Sample_, const char* Sample2_, const Vector &Pos_);
+	// Update the position of an active 3D sound sample.
+	void UpdatePos(int ref_, const Vector &Pos_, const bool ImmediateUpdate_ = false);
+	// Set volume for an active sound sample.
+	void SetVolume(int ref_, float volume_);
+	
+	// Stop an active sound sample.
+	void StopSample(int ref_);
+
+	// Return true if a sound sample is currently playing.
+	bool IsPlaying(int ref_);
+	// Play a video file.
+	void PlayVideo(const char *File_);
+	// Set music volume level.
+	void SetMusicLevel(float Level_);
+	// Return current music volume level.
+	float GetMusicLevel();
+	// Play a soundtrack track.
+	void PlaySoundtrack(const char *Track_, float Level_=0.0f);
+	// Stop the current soundtrack.
+	void StopSoundtrack();
+
+	// Play a video on a texture surface.
+	bool PlayTextureVideo(const char *Texture_, const char *Video_, bool Loop_ = true );
+	// Stop a video on a texture surface.
+	bool StopTextureVideo(const char *Texture_);
+	// Return true if a texture video is currently playing.
+	bool IsTextureVideoPlaying(const char *Texture_);
+};

@@ -1,0 +1,32 @@
+﻿// Input state helpers for mouse position/buttons and modifier keys.
+namespace Input
+{
+	// Return current mouse cursor X position.
+	int GetMouseX();
+	// Return current mouse cursor Y position.
+	int GetMouseY();
+	// Return true while the left mouse button is pressed.
+	bool LeftButtonPressed();
+	// Return true while the right mouse button is pressed.
+	bool RightButtonPressed();
+	// Return true while the middle mouse button is pressed.
+	bool MiddleButtonPressed();
+
+	// Return current mouse position projected onto the floor.
+	Vector GetFloorPos();
+	
+	// Write current mouse position projected onto the floor.
+	void GetFloorPos(float &x_, float &y_, float &z_);
+
+	// Return true while the priority modifier key is pressed.
+	bool PriorityKeyPressed();
+	
+	// Return true while the left Shift key is pressed.
+	bool LShiftPressed();
+	// Return true while the right Shift key is pressed.
+	bool RShiftPressed();
+	// Return true while the left Ctrl key is pressed.
+	bool LCtrlPressed();
+	// Return true while the right Ctrl key is pressed.
+	bool RCtrlPressed();
+};

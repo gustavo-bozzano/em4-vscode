@@ -1,0 +1,170 @@
+﻿// Overall mission execution state.
+enum MissionState
+{
+	// Mission is currently active.
+	MISSION_RUNNING,
+	// Mission finished successfully.
+	MISSION_SUCCEEDED,
+	// Mission finished with failure conditions.
+	MISSION_FAILED
+};
+
+// Return value for scripted action callbacks.
+enum ActionCallbackResult
+{
+	// Keep processing the current action queue.
+	ACTION_CONTINUE,
+	// Skip the current action and continue.
+	ACTION_SKIP,
+	// Clear pending actions for the current actor.
+	ACTION_CLEAR
+};
+
+// Behavior to apply after reaching the end of a path.
+enum PathFinishedAction
+{
+	// Use the path's default behavior.
+	PATH_DEFAULT,
+	// Delete the path after completion.
+	PATH_DELETE,
+	// Restart path traversal from the beginning.
+	PATH_RESTART,
+	// Stop on the final path node.
+	PATH_STOP
+};
+
+// Collision behavior while moving along a path.
+enum MoveCollCheck
+{
+	// Stop movement on collision but keep the action active.
+	MCC_HALT_CONTINUE,
+	// Ignore collisions and keep the action active.
+	MCC_IGNORE_CONTINUE,
+	// Stop movement and finish the action.
+	MCC_HALT_DONE,
+	// Keep moving for this step and finish the action.
+	MCC_IGNORE_DONE,
+	// Stop movement and clear the current action list.
+	MCC_HALT_CLEARLIST,
+	// Keep moving for this step and clear the action list.
+	MCC_IGNORE_CLEARLIST
+};
+
+// Mission control helpers for objectives, timers, UI, and scoring.
+namespace Mission
+{
+	// Scoring breakdown used by the mission evaluation screen.
+	struct MissionScoring
+	{
+		float PersonResult;
+		float ThingsResult;
+		float BudgetResult;
+		float TimeResult;
+		float Efficiency;
+	};
+
+	// Register a mission objective with optional opening/completion comments.
+	void AddObjective(const char *Name_, const char *OpenComment_ = NULL, const char *AccomplishedComment_ = NULL);
+	// Register an objective and immediately play related comments when applicable.
+	void AddObjectivePlayComment(const char *Name_, const char *OpenComment_ = NULL, const char *AccomplishedComment_ = NULL);
+	// Remove an objective by identifier.
+	void RemoveObjective(const char *Name_);
+	// Remove all registered objectives.
+	void RemoveAllObjectives();
+	// Check whether an objective exists.
+	bool HasObjective(const char *Name_);
+	// Mark an objective as accomplished or not.
+	void SetObjectiveAccomplished(const char *Name_, bool State_);
+	// Return whether a specific objective is accomplished.
+	bool IsObjectiveAccomplished(const char *Name_);
+	// Return true when all objectives are accomplished.
+	bool AllObjectivesAccomplished();
+	// Return the number of accomplished objectives.
+	int GetNumObjectivesAccomplished();
+	// Return the number of remaining objectives.
+	int GetNumObjectivesNotAccomplished();	
+	
+	// Query default mission logic state.
+	bool IsDefaultLogicPositive();
+	// Query whether default logic is in a failing state.
+	bool IsDefaultLogicNegative();
+	
+	// Start a one-shot timer.
+	bool StartSingleTimer(const char *Name_, float TimeOut_, bool usePhysicsTicks_ = false);
+	// Start a repeating timer.
+	bool StartIntervalTimer(const char *Name_, float TimeOut_, bool usePhysicsTicks_ = false);
+	// Stop and remove a timer.
+	bool StopTimer(const char *Name_);
+	// Pause a running timer.
+	bool PauseTimer(const char *Name_);
+	// Resume a paused timer.
+	bool ResumeTimer(const char *Name_);
+	// Add or subtract time from a running timer.
+	float ModifyTimeOut(const char *TimerName_, float TimeDifference_);
+	// Return whether a timer exists and is started.
+	bool TimerIsStarted(const char* name);
+	
+	// Return mission counter value.
+	int GetCounter(const char *Counter_);
+	// Increment and return a counter value.
+	int IncCounter(const char *Counter_, int Amount_=1);
+	// Decrement and return a counter value.
+	int DecCounter(const char *Counter_, int Amount_=1);
+	// Set counter to a value and return the new value.
+	int SetCounter(const char *Counter_, int Value_);
+	// Reset all mission counters.
+	void ResetCounters();
+
+	// Enter cutscene mode.
+	void StartCutScene(bool useCamLimitsForTransition_ = true);
+	// Leave cutscene mode.
+	void EndCutScene(bool restoreOldCamLocation_ = false, float restoreTransitionDuration_ = 0.0f);
+	// Check whether a cutscene is currently active.
+	bool IsCutSceneRunning();
+	// Animate black bars in.
+	void ShowBlackBars(float duration_ = 0.0f);
+	// Animate black bars out.
+	void HideBlackBars(float duration_ = 0.0f);
+	// Fade to black bars, hold, then reopen.
+	void CloseBlackBars(float duration_ = 0.0f, float blackDuration_ = 3.0f);
+	 		
+	// Play a hint message and optional audio file.
+	void PlayHint(const char *HintText, const char *SoundFile = NULL);
+	// Show a colored message ticker entry.
+	void ShowMessageTickerText(const char *Text_, float Red_=1.0f, float Green_=1.0f, float Blue_=1.0f);
+	// Play a mission comment audio clip.
+	void PlayComment(const char *commentFile_);
+	// Return whether a comment audio clip is still playing.
+	bool IsCommentPlaying();
+	// Return mission runtime in seconds.
+	int GetMissionTime();
+	// Return current mission budget.
+	int GetMoneyLeft();
+	// Set mission budget to an absolute amount.
+	void SetMoney(int Amount_);
+	// Resolve the default efficiency comment key.
+	const char *GetDefaultCommentForEfficiency(float efficiency_);
+
+	// Start countdown timer.
+	void StartCountDown(int Seconds_);
+	// Pause countdown timer.
+	void PauseCountDown();
+	// Resume countdown timer.
+	void ResumeCountDown();
+	// Stop countdown timer.
+	void StopCountDown();
+	// Return remaining countdown seconds.
+	int GetCountDownSeconds();
+	// Set countdown display color.
+	void SetCountDownColor(float red_, float green_, float blue_);
+};
+
+
+// Base class for mission script implementations.
+class MissionScript
+{
+		// Construct mission script instance bound to a class/object pair.
+		MissionScript(const char *Class_, const char *Object_);
+		// Virtual destructor for mission script subclasses.
+		virtual ~MissionScript();
+};

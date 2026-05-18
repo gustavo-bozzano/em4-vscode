@@ -1,0 +1,10 @@
+﻿// Insert modes for adding actions into an actor action list.
+enum ActionInsertMode
+{
+	ACTION_APPEND,
+	ACTION_INSERT,
+	ACTION_INSERTAFTERFIRST,
+	ACTION_INSERTBEFORELAST,
+	ACTION_NEWLIST,
+	ACTION_REPLACEFIRST
+};

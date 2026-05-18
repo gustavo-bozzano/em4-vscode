@@ -1,0 +1,118 @@
+﻿// Binary script serializer for save/load and network state transfer.
+class ScriptSerializer
+{
+	// Construct a script serializer wrapper.
+	ScriptSerializer();
+	// Release this script serializer wrapper.
+	~ScriptSerializer(void);
+
+	// Return true if the serializer is ready for use.
+	bool IsValid() const;
+
+	// Write a string value.
+	int Write(const char *String_);
+	// Write an integer value.
+	int Write(int Value_);
+	// Write an unsigned integer value.
+	int Write(unsigned int Value_);
+	// Write a long integer value.
+	int Write(long Value_);
+	// Write a float value.
+	int Write(float Value_);
+	// Write a char value.
+	int Write(char Value_);
+	// Write an unsigned char value.
+	int Write(unsigned char Value_);
+	// Write an unsigned short value.
+	int Write(unsigned short Value_);
+	// Write a boolean value.
+	int Write(bool Value_);
+	// Write an actor wrapper.
+	int Write(Actor &Actor_);
+	// Write a game object wrapper.
+	int Write(GameObject &Obj_);
+	// Write a person wrapper.
+	int Write(Person &Person_);
+	// Write a vehicle wrapper.
+	int Write(Vehicle &Vehicle_);
+	// Write an open house wrapper.
+	int Write(OpenHouse &House_);
+	// Write a fire object wrapper.
+	int Write(FireObject &Fireobject_);
+	// Write a spawn point wrapper.
+	int Write(SpawnPoint &SpawnPoint_);
+	// Write a path wrapper.
+	int Write(Path &Path_);
+	// Write an actor list wrapper.
+	int Write(ActorList &List_);
+	// Write a game object list wrapper.
+	int Write(GameObjectList &List_);
+	// Write a person list wrapper.
+	int Write(PersonList &List_);
+	// Write a vehicle list wrapper.
+	int Write(VehicleList &List_);
+	// Write a fire object list wrapper.
+	int Write(FireObjectList &List_);
+	// Write an open house list wrapper.
+	int Write(OpenHouseList &List_);
+	// Write a path list wrapper.
+	int Write(PathList &List_);
+	// Write a vector value.
+	int Write(Vector &Value_);
+
+	// Read a string value.
+	int Read(char *&String_);
+	// Read an integer value.
+	int Read(int &Value_);
+	// Read an unsigned integer value.
+	int Read(unsigned int &Value_);
+	// Read a long integer value.
+	int Read(long &Value_);
+	// Read a float value.
+	int Read(float &Value_);
+	// Read a char value.
+	int Read(char &Value_);
+	// Read an unsigned char value.
+	int Read(unsigned char &Value_);
+	// Read an unsigned short value.
+	int Read(unsigned short &Value_);
+	// Read a boolean value.
+	int Read(bool &Value_);
+	// Read a boolean value.
+	bool ReadBool();
+	// Read an actor wrapper.
+	int Read(Actor &Actor_);
+	// Read a game object wrapper.
+	int Read(GameObject &Obj_);
+	// Read a person wrapper.
+	int Read(Person &Person_);
+	// Read a vehicle wrapper.
+	int Read(Vehicle &Vehicle_);
+	// Read an open house wrapper.
+	int Read(OpenHouse &House_);
+	// Read a fire object wrapper.
+	int Read(FireObject &Fireobject_);
+	// Read a spawn point wrapper.
+	int Read(SpawnPoint &SpawnPoint_);
+	// Read a path wrapper.
+	int Read(Path &Path_);
+	// Read an actor list wrapper.
+	int Read(ActorList &List_);
+	// Read a game object list wrapper.
+	int Read(GameObjectList &List_);
+	// Read a person list wrapper.
+	int Read(PersonList &List_);
+	// Read a vehicle list wrapper.
+	int Read(VehicleList &List_);
+	// Read a fire object list wrapper.
+	int Read(FireObjectList &List_);
+	// Read an open house list wrapper.
+	int Read(OpenHouseList &List_);
+	// Read a path list wrapper.
+	int Read(PathList &List_);
+	// Read a vector value.
+	int Read(Vector &Value_);
+
+	// Return serializer format version.
+	unsigned int GetVersion() const;
+};

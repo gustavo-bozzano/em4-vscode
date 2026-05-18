@@ -1,0 +1,51 @@
+﻿// Path traversal mode.
+enum PathType
+{
+	PATH_FORWARD,
+	PATH_BACKWARD,
+	PATH_LOOP,
+	PATH_PINGPONG
+};
+
+// Path actor used for waypoint traversal and route queries.
+class Path : public Actor
+{
+	// Construct an invalid path wrapper.
+	Path();
+	// Copy-construct from another path wrapper.
+	Path(const Path& Obj_);
+	// Wrap an existing path actor.
+	Path(const Actor* Act_);
+	// Release this wrapper.
+	~Path();
+
+	// Return true if this path wrapper references a valid path.
+	virtual bool IsValid() const;
+	// Set whether the attached object should be deleted when path ends.
+	void SetOnFinishDeleteObject( bool delete_);
+	// Return true if the attached object is deleted on finish.
+	bool GetOnFinishDeleteObject() const;
+
+	// Set traversal behavior for the path.
+	void SetPathType(PathType type_);
+	// Return traversal behavior for the path.
+	PathType GetPathType() const;
+
+	// Return starting position of the path.
+	Vector GetStartPosition() const;
+	// Return total path length.
+	float GetDistance(const Vector &Pos_) const;
+	// Return traversal speed used by the path.
+	float GetPathSpeed();
+
+	// Return number of points in the path.
+	int GetNumPoints();
+	// Return point at index_.
+	Vector GetPoint(int index_);
+	// Return point ID at index_.
+	int GetPointID(int index_);
+	// Return nearest path point to v_.
+	Vector GetNearestPoint(const Vector &v_);
+	// Return nearest path point index to v_.
+	int GetNearestPointIndex(const Vector &v_);
+};

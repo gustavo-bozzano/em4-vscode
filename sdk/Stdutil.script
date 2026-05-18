@@ -1,0 +1,6 @@
+﻿// Safe formatted string writer.
+int snprintf(char *buffer_, unsigned int count_, const char *fmt_, ...);
+// String compare helper.
+int StrCompare(const char* string1, const char* string2);
+// Return pointer to first occurrence of search in ref.
+char *StrFind(const char *ref, const char *search);

@@ -1,0 +1,911 @@
+﻿// Enumeration GameObjectType.
+enum GameObjectType
+{
+	TYPE_UNKNOWN,
+	TYPE_OBJECT,
+	TYPE_PERSON,
+	TYPE_HOUSE,
+	TYPE_VEHICLE,
+	TYPE_OPEN_HOUSE
+};
+
+// Enumeration FloorPlacement.
+enum FloorPlacement
+{
+	PLACEMENT_NONE,				// frei dreh- und positionierbar
+	PLACEMENT_AXISALIGNED,		// Objekt wird nicht gedreht, Pivotpunkt mit Offset entscheidet die Höhe
+	PLACEMENT_BOXALIGNED,			// Objekt frei drehbar, Boundingbox-Auflagepunkte mit Offset entscheiden über Höhe
+	PLACEMENT_ALIGNED_CORNERS,	// Ecken der Boundingbox entscheiden über Höhe und Ausrichtung, unterste Seite der bbop zählt
+	PLACEMENT_ALIGNED_SAMPLED,	// genauer als boundingcorners, zeitaufwendiger
+	PLACEMENT_PHYSICS,			// physik benutzen. Nicht im Game möglich!
+	PLACEMENT_CUSTOM_PLACEMENT	// placement wird von abgeleiteter Klasse berechnet (e.g. Person, Vehicle)
+};
+
+// Enumeration PhysicCollisionMode.
+enum PhysicCollisionMode
+{
+	PHYSIC_COLLISION_ALL = 0,
+	PHYSIC_COLLISION_NOWORLD = 1,
+	PHYSIC_COLLISION_NOEXTERNALBODIES = 2,
+	PHYSIC_COLLISION_NOINTERNALBODIES = 4,
+	PHYSIC_COLLISION_USECATEGORIES = 8,
+	PHYSIC_COLLISION_NOTRACELINE = 16,
+	PHYSIC_COLLISION_NORESPONSE = 32,
+	PHYSIC_COLLISION_NONE = ~PHYSIC_COLLISION_ALL & ~PHYSIC_COLLISION_USECATEGORIES
+};
+
+// Enumeration EnergyType.
+enum EnergyType
+{
+	ENERGYTYPE_UNKNOWN,
+	ENERGYTYPE_FIRE,
+	ENERGYTYPE_SHOT,
+	ENERGYTYPE_WATER,
+	ENERGYTYPE_POLICEBLOCK,
+	ENERGYTYPE_CARPUSH,
+	ENERGYTYPE_PHYSIC,
+	ENERGYTYPE_WATER_FROM_OUSIDE,
+	ENERGYTYPE_WATER_FROM_INSIDE,
+	ENERGYTYPE_SHOTSOUND,
+	ENERGYTYPE_FLIGHTSHOT
+};
+
+// constants for object-flags
+enum ObjectFlag
+{
+	OF_NONE						= 0x00000000,
+	OF_PERSON_ENCLOSED			= 0x00000001,	// object has enclosed person
+	OF_LOCKED					= 0x00000002,	// object is locked
+	OF_USABLE					= 0x00000004,	// object can be used (special action)
+	OF_BULLDOZABLE				= 0x00000008,	// can be planated by the bulldozer (wheel loader)
+	OF_TRANSPORTABLE			= 0x00000010,	// object can be loaded up (by vehicle)
+	OF_PULLABLE					= 0x00000020,	// object can be pulled
+	OF_ACCESSIBLE				= 0x00000040,	// object can be entered
+	OF_COOLABLE					= 0x00000080,   // object can be cooled by fire fighters
+	OF_SHOOTABLE				= 0x00000100,	// object can be shooted at
+	OF_CUTABLE					= 0x00000200,	// object can be cut down with chainsaw
+	OF_USABLE_WITH_MEGAPHONE	= 0x00000400,	// megaphone can be used on object
+	OF_RECOVERABLE				= 0x00000800,	// object can be recovered by recovery crane
+	OF_FLOTSAM					= 0x00001000,	// object can be picked up by motor boat
+	OF_HIDDEN					= 0x00002000,	// object is invisible
+	OF_CARRYABLE_BY_BULLDOZER	= 0x00008000,   // can be carried by the bulldozer (wheel loader)
+	OF_HAS_FIRE_EXTINGUISHER	= 0x00010000,	// object carries one/many fire extinguishers
+	OF_HAS_SHEARS				= 0x00020000,	// object carries one/many jaws of life
+	OF_HAS_CHAINSAW				= 0x00040000,	// object carries one/many chainsaws
+	OF_HAS_HOSE					= 0x00080000,	// object carries one/many fire hoses
+	OF_HAS_JUMPPAD				= 0x00100000,	// object carries one/many jumppads
+	OF_HAS_ROADBLOCK			= 0x00200000,	// object carries one/many roadblocks
+	OF_HAS_FLASHGRENADE			= 0x00400000,	// object carries one/many flashgrenades
+	OF_HAS_FIREAXE				= 0x00800000,	// object carries one/many fireaxes
+
+	OF_BLOCKED					= 0x80000000	// no interaction with object possible
+};
+
+// Enumeration ObjectBurnStatus.
+enum ObjectBurnStatus
+{
+	OBS_NORMAL			= 0x01,	// object is in normal mode / visible in normal mode
+	OBS_HALFBURNED		= 0x02,	// object is halfburned / visible in halfburned mode
+	OBS_FULLBURNED		= 0x04	// object is fullburned / visible in fullburned mode
+};
+
+// Enumeration TrafficLightType.
+enum TrafficLightType
+{
+	TLT_NONE,
+	TLT_GREEN,
+	TLT_YELLOW,
+	TLT_RED
+};
+
+// Enumeration BlinkerLightType.
+enum BlinkerLightType
+{
+	BLT_NONE,
+	BLT_LEFT,
+	BLT_RIGHT,
+	BLT_BOTH
+};
+
+// Enumeration HaltType.
+enum HaltType
+{
+	HALT_PERSONS,
+	HALT_VEHICLES,
+	HALT_BOTH
+};
+
+// Enumeration ContaminationType.
+enum ContaminationType
+{
+	CONTAMINATION_ATOMIC,
+	CONTAMINATION_CHEMICAL,
+	CONTAMINATION_BIOLOGICAL
+};
+
+union ActionParameters
+{
+	float fValue;
+	int iValue;
+	bool bValue;
+	char *cValue;
+// Actor API surface.
+	class Actor *aValue;
+	void *pValue;
+};
+
+// Struct ActionCallback.
+struct ActionCallback
+{
+// GameObject API surface.
+	class GameObject *Owner;
+	ActionParameters Parameters[8];
+	// Construct action callback data.
+	ActionCallback();
+};
+
+// GameObject API surface.
+class GameObject : public Actor
+{
+	// Create a GameObject instance wrapper.
+	GameObject();
+	// Create a GameObject instance wrapper.
+	GameObject(const GameObject &Obj_);
+	// Create a GameObject instance wrapper.
+	GameObject(const Actor *Act_);
+	// Release this GameObject wrapper.
+	virtual ~GameObject();
+	// Return true if the game object wrapper is valid.
+	virtual bool IsValid() const;
+
+	// Return true if the animation exists.
+	bool HasAnimation(const char *Anim_);
+	// Set active animation.
+	void SetAnimation(const char *Anim_);
+	// Return true if this animation is currently active.
+	bool IsCurrentAnimation(const char *Anim_);
+	// Return true if the active animation has finished.
+	bool IsAnimationFinished() const;
+
+	// Assign a command to this object.
+	bool AssignCommand(const char *Command_);
+	// Remove command and return success.
+	void RemoveCommand(const char *Command_);
+	// Enable command.
+	void EnableCommand(const char *Command_, bool Enabled_);
+	// Disable all Commands.
+	void DisableAllCommands();
+	// Return true if the command is enabled.
+	bool IsCommandEnabled(const char *Command_);
+	// Return true if the object has this command.
+	bool HasCommand(const char *Command_);
+	// Enable or disable commandability.
+	void SetCommandable(bool Commandable_);
+
+	// Enable on Contact Callback.
+	void EnableOnContactCallback(bool enable_);
+	// Get object type.
+	GameObjectType GetObjectType() const;
+	// Get carried objects.
+	GameObjectList GetCarriedObjects();
+
+	// Update placement.
+	virtual void UpdatePlacement(void);
+	// Disable placement handling.
+	virtual void SetPlacementNone(void);
+	// Set floor placement mode.
+	virtual void SetPlacement(FloorPlacement placement_);
+	// Compute placement coordinates.
+	virtual void ComputePlacement(float &x_, float &y_, float &z_);
+
+	// Set world position from vector.
+	virtual void SetPosition(const Vector &v_);
+	// Set world position from another object.
+	virtual void SetPosition(const GameObject* obj_);
+	// Set rotation from another object.
+	virtual void SetRotation(const GameObject* obj_);
+	virtual void SetRotation(float r00, float r01, float r02,
+	float r10, float r11, float r12,
+	float r20, float r21, float r22);
+	virtual void SetRotationPutInXY(float r00, float r01, float r02,
+	float r10, float r11, float r12,
+	float r20, float r21, float r22);
+	virtual void GetRotation(float &r00, float &r01, float &r02,
+	float &r10, float &r11, float &r12,
+	float &r20, float &r21, float &r22);
+
+	// Get world position.
+	virtual Vector GetPosition() const;
+
+	// Get the look-at direction.
+	virtual Vector GetLookatDir();
+	// Fill the look-at direction components.
+	virtual void GetLookatDir(float &x_, float &y_, float &z_);
+	// Set the look-at direction from components.
+	virtual void SetLookatDir(float x_, float y_, float z_);
+	// Set the look-at direction from a vector.
+	virtual void SetLookatDir(Vector &dir_);
+
+	// Get the model-space position.
+	virtual void GetModelPosition(float &x_, float &y_, float &z_);
+	// Get the position offset.
+	virtual float GetPositionOffset();
+	const char *GetPrototypeName();
+	const char *GetPrototypeFileName();
+	const char *GetModelFileName();
+
+	// Return true if the object is inside the map.
+	bool IsInsideMap();
+	// Get a point on the oriented bounding box.
+	void GetOrientedBBoxPoint( unsigned int corner_, float &x_, float &y_, float &z_);
+	// Draw the oriented bounding box.
+	void DrawOrientedBBox(unsigned char red_=255, unsigned char green_=255, unsigned char blue_=255);
+
+	// Return true if the object is a jumppad.
+	bool IsJumppad() const;
+	// Return true if the object is a roadblock.
+	bool IsRoadblock() const;
+	// Return true if the object is a hydrant.
+	bool IsHydrant() const;
+	// Return true if the hydrant is in use.
+	bool IsHydrantInUse() const;
+	// Return true if the object is inside water.
+	bool IsInsideWater() const;
+	// Return true if the object is idle.
+	bool IsIdle() const;
+	// Return true if the current action can be stopped.
+	bool CanStopAction() const;
+	// Return true if the object is waiting.
+	bool IsWaiting() const;
+	// Return true if the object has fire children.
+	bool HasFireChilds() const;
+	// Return true if the object is selected.
+	bool IsSelected() const;
+	// Return true if the object has been shot.
+	bool IsShooted() const;
+	// Return true if the object has equipment.
+	bool IsEquipped() const;
+	// Return true if the object carries anything.
+	bool IsCarryingAnything() const;
+	// Return true if the object carries other objects.
+	bool IsCarryingObjects() const;
+	// Return true if the object is aiming.
+	bool IsAiming() const;
+	// Return true if the object is pulling.
+	bool IsPulling() const;
+	// Return true if the object is being carried.
+	bool IsCarried() const;
+	// Return true if the object is moving.
+	bool IsMoving() const;
+	// Return true if a command target is in range.
+	bool IsCommandInRange(float maxDist_) const;
+
+	// Get the firehose ID.
+	int GetFirehoseID() const;
+	// Get the linked hydrant.
+	GameObject GetHydrant();
+	// Mark the object as inside water.
+	void SetInsideWater(bool inWater_);
+
+	// Get firehose waypoints for the selected hose segment.
+	void GetFirehoseWaypoints(int which_, Vector &v1_, Vector &v2_);
+
+	// Get the number of firehose waypoints near the given position.
+	int GetNumFirehoseWaypoints(float x_, float y_);
+	// Select the object.
+	void Select();
+	// Deselect the object.
+	void Deselect();
+	// Enable or disable selection.
+	void SetSelectable(bool selectable_);
+
+	// Set equipped item type.
+	void SetEquipment(EquipmentType Equip_);
+	// Get equipped item type.
+	EquipmentType GetEquipment(void) const;
+	// Remove equipment and return success.
+	void RemoveEquipment();
+
+	// Get object flags.
+	int GetFlags(void) const;
+	// Set object flags.
+	void SetFlags(int flags_);
+	// Clear all object flags.
+	void ClearFlags(void);
+
+	// Get the burning status.
+	const ObjectBurnStatus GetBurningStatus()const;
+	// Start burning.
+	void Burn();
+	// Stop burning.
+	void StopBurning();
+	// Return true if the object is burning.
+	bool IsBurning();
+	// Return true if the object is completely burning.
+	bool IsCompletelyBurning();
+	// Return true if the object is burning inside.
+	bool IsBurningInside();
+	// Return true if the object is burning outside.
+	bool IsBurningOutside();
+	// Set the named fire object as burning.
+	void SetFireObjectBurning(const char* name_);
+	// Return true if the named fire object is burning.
+	bool IsFireObjectBurning(const char* name_);
+	// Get a fire child by name.
+	FireObject GetFireChild(const char* name_);
+	// Get a fire child by index.
+	FireObject GetFireChild(int index_);
+	// Get the number of fire children.
+	int GetNumFireChilds();
+
+	// Return true if the specified flag is set.
+	bool IsFlagSet(int flag_) const;
+	// Set an object flag.
+	void SetFlag(int flag_);
+	// Clear an object flag.
+	void ClearFlag(int flag_);
+	// Toggle an object flag.
+	void ToggleFlag(int flag_);
+
+	// Start the particle effect.
+	void StartParticleEffect();
+	// Stop the particle effect.
+	void StopParticleEffect();
+	// Set particle effect strength.
+	void SetParticleEffectStrength(const float strength_);
+	// Set particle effect direction.
+	void SetParticleEffectDirection(const float x,const float y,const float z);
+	// Set particle effect speed.
+	void SetParticleEffectSpeed(const float constant);
+	// Set particle effect size.
+	void SetParticleEffectSize(const float size);
+	// Return true if the particle effect has ended.
+	bool HasParticleEffectEnded();
+
+	// Stop the current animation.
+	void StopAnimation();
+	// Trigger an explosion.
+	void Explode();
+	// Trigger an explosion with a force value.
+	void Explode(float force);	// Diese Funktion ist veraltet. Bitte nicht mehr verwenden.
+	// Apply a force to a physics body.
+	void ApplyForce(int bodyNum_, const Vector &Pos_, const Vector &Force_);
+	// Add an explosion force field.
+	void AddExplosionForceField(const char* material_);
+
+	// Set object path by name.
+	void SetObjectPath(const char* pathname, float speed = 0.0f, bool forward = true);
+	// Set object path from a path object.
+	void SetObjectPath(Path *path_, float speed = 0.0f, bool forward = true);
+	// Remove object Path and return success.
+	void RemoveObjectPath();
+	// Return true if an object path is active.
+	bool HasObjectPath(const char* pathname);	// if no name is given check if ANY objectpath is set
+	// Return true if path direction is forward.
+	bool IsForwardOnPath() const;
+	// Get current object path.
+	Path GetObjectPath() const;
+
+	// Return true if path following is paused.
+	bool IsPathPaused() const;
+	// Pause or resume path following.
+	void SetPausePath(bool enable_);
+	// Set current path speed.
+	void SetCurrentPathSpeed(float speed, float acceleration = 0.0f);
+	// Get current path speed.
+	float GetCurrentPathSpeed() const;
+
+	// Return true if destination has been reached.
+	bool HasArrived(const char* pathname,const float accuracy = 100.f);
+	// Get current destination coordinates.
+	bool GetDestination(float &x, float &y, float &z) const;
+
+	// Disable physics.
+	void DisablePhysics();
+	// Enable physics.
+	void EnablePhysics();
+	// Enable physics simulation.
+	bool EnablePhysicsSimulation(bool keepSpeed_ = false, bool freeze_ = false, bool clearActions_=true);
+	// Set physics velocity.
+	void SetPhysicsVelocity(float speedX_, float speedY_, float speedZ_);
+	// Get linear velocity of a physics body.
+	bool GetPhysicsLinearVelocity(int bodyNum, Vector &linVel_);
+	// Get angular velocity of a physics body.
+	bool GetPhysicsAngularVelocity(int bodyNum, Vector &angVel_);
+	// Get physics mass.
+	float GetPhysicsMass();
+	// Set physics friction.
+	void SetPhysicsFriction(float friction_);
+	// Disable physics simulation.
+	bool DisablePhysicsSimulation(bool forceUseOfPhysicsGeometry_ = false);
+	// Return true if physics is frozen.
+	bool IsPhysicsFreezed() const;		// tests if physic object has ceased any movement
+	// Return true if physics simulation is enabled.
+	bool IsPhysicsSimulationEnabled();
+	// Set floatage density factor.
+	void SetFloatage(float densityFactor_);
+	// Return true if the physics object is floating.
+	bool IsPhysicsObjectFloating();
+	// Replace physics object shape/state.
+	bool ReplacePhysicsObject(const GameObject* obj_);
+	// Set collision response force threshold.
+	bool SetCollisionResponseByForces(float force_ = 5.0f);
+	// Disable collision Response.
+	void DisableCollisionResponse();
+	// Set physics static mode.
+	void SetPhysicsStatic(bool enable_);
+	// Activate OBB collision.
+	bool ActivateOBBCollision();
+	// Get OBB collision state.
+	bool GetOBBCollision();
+	// Start physics Event.
+	bool StartPhysicsEvent(int steps_);
+	// Set collision mode.
+	void SetCollisionMode(PhysicCollisionMode mode_);
+	// Freeze physics simulation.
+	bool FreezePhysics() const;
+	// Unfreeze physics simulation.
+	bool UnfreezePhysics() const;
+	// Return true if object had a physics contact.
+	bool HasHadContact() const;
+
+	// Get physics position.
+	bool GetPhysicsPosition(Vector &Pos_) const;
+	// Set physics position.
+	bool SetPhysicsPosition(const Vector &Pos_);
+	// Return true if a physics collision occurred.
+	bool HasPhysicsCollision();
+
+	// Convert a relative position to world space.
+	Vector RelativeToWorldPosition(const Vector &Rel_) const;
+	// Set animation time.
+	void SetAnimationTime(float time_, bool halt_ = true);
+
+	// Get objects within range.
+	GameObjectList GetObjectsInRange(float radius_, int filter_ = ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+		// Get closest object within range.
+	GameObject GetClosestObjectInRange(float radius_, int filter_ = ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+		// Get closest object within range above minimum distance.
+	GameObject GetClosestObjectInRange(float radius_, float minDist_, int filter_ = ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+
+	// Return true if the object is a bridge.
+	bool IsBridge(void) const;
+
+	// Return true if colliding with a named trigger.
+	bool IsCollidingWithTrigger(const char *triggerName);
+	// Return true if colliding with a trigger object.
+	bool IsCollidingWithTrigger(GameObject *trigger_);
+	// Return true if colliding with a virtual object.
+	bool IsCollidingWithVirtualObject(const char *voName_);
+	// Activate trigger state.
+	bool ActivateTrigger();
+	// Deactivate trigger state.
+	bool DeactivateTrigger();
+
+	// Compute distance to another object pointer.
+	float Distance(GameObject* obj2);
+	// Compute distance to another object reference.
+	float Distance(GameObject& obj2);
+	// Compute planar distance to another object pointer.
+	float DistanceXY(GameObject* obj2);
+	// Compute planar distance to another object reference.
+	float DistanceXY(GameObject& obj2);
+	// Compute distance to coordinates.
+	float Distance(float x_, float y_, float z_);
+
+	// Show object visuals.
+	void Show();
+	// Hide object visuals.
+	void Hide();
+	// Return true if object visuals are hidden.
+	bool IsHidden() const;
+
+	// Set trace accuracy to no collision.
+	void SetTraceAccuracy_NoCollision();
+	// Set trace accuracy to axis-aligned box.
+	void SetTraceAccuracy_AABox();
+	// Set trace accuracy to oriented box.
+	void SetTraceAccuracy_OBox();
+	// Set trace accuracy to polygon level.
+	void SetTraceAccuracy_Polygons();
+
+	// Set child trace accuracy to no collision.
+	void SetChildTraceAccuracy_NoCollision(const char* name_);
+	// Set child trace accuracy to axis-aligned box.
+	void SetChildTraceAccuracy_AABox(const char* name_);
+	// Set child trace accuracy to oriented box.
+	void SetChildTraceAccuracy_OBox(const char* name_);
+	// Set child trace accuracy to polygon level.
+	void SetChildTraceAccuracy_Polygons(const char* name_);
+
+	// Return true if a child with this name exists.
+	bool HasChild(const char* name_) const;
+	// Get child position by child ID.
+	Vector GetChildPosition(int childID_) const;
+	// Enable or disable a child by name.
+	void SetChildEnabled(const char* name_, bool enabled_);
+	// Return true if child is enabled by name.
+	bool IsChildEnabled(const char* name_);
+	// Return true if child is enabled by ID.
+	bool IsChildEnabled(int ChildID_);
+	const char *GetChildName(int ChildID_);
+
+	// Return true if this action is currently active.
+	bool IsCurrentAction(const char *Action) const;
+	// Return true if any action is queued or running.
+	bool HasAnyAction() const;
+	// Get number of queued actions.
+	int GetNumActions() const;
+	// Validate collision.
+	bool CheckCollision(const Vector &Pos_) const;
+	// Return true if object occludes sight line to target.
+	bool OccludesSightLine(GameObject &Obj_);
+
+	// Enable blue Lights.
+	void EnableBlueLights(bool enable_);
+	// Return true if blue lights are enabled.
+	bool IsBlueLightEnabled() const;
+	// Enable head Lights.
+	void EnableHeadLights(bool enable_);
+	// Enable break Lights.
+	void EnableBreakLights(bool enable_); // aus Kombatibilitätsgründen noch da
+	// Enable brake Lights.
+	void EnableBrakeLights(bool enable_);
+	// Return true if brake lights are enabled.
+	bool IsBrakeLightEnabled() const;
+	// Enable special Lights.
+	void EnableSpecialLights(bool enable_);
+	// Return true if special lights are enabled.
+	bool IsSpecialLightEnabled() const;
+	// Enable traffic Light.
+	void EnableTrafficLight(TrafficLightType type_);
+	// Enable blinker.
+	void EnableBlinker(BlinkerLightType type_);
+	// Get blinker status.
+	BlinkerLightType GetBlinkerStatus() const;
+	// Enable or disable a light by ID.
+	void SetLightEnabled(int id_, bool enable_);
+
+	// Set highlighted state.
+	void SetHighlighted(bool enable_);
+
+	// Get speed factor at position.
+	float GetSpeedFactor(const Vector &Pos_) const;
+	// Get terrain speed relative to another object.
+	float GetTerrainSpeed(GameObject * object_);
+	// Return true if object is a barricade.
+	bool IsBarricade();
+	// Remove router Object and return success.
+	void RemoveRouterObject();
+
+	// Return true if object is triggering the named trigger.
+	bool IsTriggering(const char *Trigger_);
+	// Return true if object is a ponton bridge.
+	bool IsPontonBridge();
+	// Return true if bridge is installed.
+	bool IsBridgeInstalled();
+	// Return true if bridge is in use.
+	bool IsBridgeInUse();
+	// Get bridge install point index.
+	int GetBridgeInstallPoint();
+
+	// Get number of active fire children.
+	int GetNumActiveFireChilds() const;
+
+	// Return true if waiting-point creation is enabled.
+	bool IsWaitingPointCreationEnabled() const;
+	// Enable waiting Point Creation.
+	void EnableWaitingPointCreation(bool enable_);
+	// Return true if a waiting point exists.
+	bool HasWaitingPoint() const;
+	// Add waiting Point and return success.
+	bool AddWaitingPoint();
+	// Add waiting Point and return success.
+	bool AddWaitingPoint(float gazerRadius_, float catchmentRadius_);
+	// Remove waiting Point and return success.
+	bool RemoveWaitingPoint();
+
+	// Get parent house ID.
+	int GetParentHouseID() const;
+
+	// Return true if water cannon is active.
+	bool IsWaterCannonActive();
+
+	// Validate contamination.
+	void CheckContamination(int contamType_, float radius_);
+
+	// Dump object position and rotation to script variables.
+	void DumpObjectPositionAndRotation(const char* varName);
+
+	// Get container object ID.
+	int GetContainerObjectID() const;
+	// Set linked person ID.
+	void SetLinkedPersonID(int id_);
+
+	// Set movement speed.
+	void SetSpeed(float Spd_);
+	// Get movement speed.
+	float GetSpeed();
+
+	// Set multiplayer player ID.
+	void SetPlayerMP(int playerID_);
+	// Get multiplayer player ID.
+	int GetPlayerMP() const;
+
+	// Return true if a person is blocked by this object.
+	bool HasBlockedPerson();
+
+	// Return true if object is in sight.
+	bool IsInSight();
+
+		// Persons within this area will be contaminated.
+	void SetContaminationArea( ContaminationType contaminationType_, float range_ );
+	// Remove the contamination area.
+	void RemoveContaminationArea();
+
+	// Clear all queued actions.
+	void ClearActions();
+	// Queue a no-op action.
+	void PushActionNOP(ActionInsertMode Mode_);
+	// Queue a move action to a position.
+	void PushActionMove(ActionInsertMode Mode_, const Vector &Pos_, bool direct_ = false);
+	// Queue a move action to a target object.
+	void PushActionMove(ActionInsertMode Mode_, Actor* Target_, TargetPoint Pnt_, bool direct_ = false);
+	// Queue a move action to a target ID.
+	void PushActionMove(ActionInsertMode Mode_, int TargetID_, TargetPoint Pnt_, bool direct_ = false);
+	// Queue a follow movement action.
+	void PushActionMoveFollow(ActionInsertMode Mode_, Actor* Target_, float NearDist_, float HaltDist_);
+	// Queue an animation switch.
+	void PushActionSwitchAnim(ActionInsertMode Mode_, const char *Anim_);
+	// Queue a visibility toggle.
+	void PushActionShowHide(ActionInsertMode Mode_, bool Hide_);
+	// Queue entering a car.
+	void PushActionEnterCar(ActionInsertMode Mode_, Actor* Target_);
+	// Queue leaving a car.
+	void PushActionLeaveCar(ActionInsertMode Mode_, Actor* Target_);
+	// Queue picking up a target.
+	void PushActionPickUp(ActionInsertMode Mode_, Actor* Target_);
+	// Queue pushing a target.
+	void PushActionPush(ActionInsertMode Mode_, Actor* Target_, float Power_=200.f);
+	// Queue dropping the current object.
+	void PushActionDrop(ActionInsertMode Mode_);
+	// Queue acquiring equipment.
+	void PushActionGetEquipment(ActionInsertMode Mode_, Actor* Target_, EquipmentType equipment_);
+	// Queue removing equipment.
+	void PushActionRemoveEquipment(ActionInsertMode Mode_);
+	// Queue extinguishing a target.
+	void PushActionExtinguish(ActionInsertMode Mode_, Actor* Target_, float Energy_);
+	// Queue tagging a target.
+	void PushActionTag(ActionInsertMode Mode_, const char *Tag_);
+	// Queue loading a target.
+	void PushActionLoadUp(ActionInsertMode Mode_, Actor* Target_);
+	// Queue unloading at a specific point.
+	void PushActionUnload(ActionInsertMode Mode_, int unloadPointID_ = -1);
+	// Queue moving a bucket.
+	void PushActionMoveBucket(ActionInsertMode Mode_, Actor* Target_, bool up_);
+	// Queue planing a target.
+	void PushActionPlanate(ActionInsertMode Mode_, Actor* Target_);
+	// Queue a return-to-base action.
+	void PushActionReturnToBase(ActionInsertMode Mode_);
+	// Queue healing a target.
+	void PushActionHeal(ActionInsertMode Mode_, Actor* Target_, bool JustStabilize_=false);
+	// Queue arresting a target.
+	void PushActionArrest(ActionInsertMode Mode_, Actor* Target_, bool Fight_=false);
+	// Queue releasing the current target.
+	void PushActionRelease(ActionInsertMode Mode_);
+	// Queue asking a person.
+	void PushActionAskPerson(ActionInsertMode Mode_, Actor* Target_);
+	// Queue using equipment on a child ID.
+	void PushActionUseEquipment(ActionInsertMode mode_, Actor* Target_, int childID_, float time_);
+	// Queue using equipment at a position.
+	void PushActionUseEquipment(ActionInsertMode mode_, const Vector &Target_, float time_);
+	// Queue a wait action.
+	void PushActionWait(ActionInsertMode mode_, float time_);
+	// Queue turning toward a target.
+	void PushActionTurnTo(ActionInsertMode mode_, Actor *Target_, float Duration_=0.f);
+	// Queue turning toward a position.
+	void PushActionTurnTo(ActionInsertMode mode_, const Vector &Pos_, float Duration_=0.f);
+	// Queue lifting a target.
+	void PushActionLift(ActionInsertMode Mode_, Actor* Target_);
+	// Queue unloading a person.
+	void PushActionUnloadPerson(ActionInsertMode Mode_);
+	// Queue aiming at a target.
+	void PushActionAim(ActionInsertMode Mode_, Actor* Target_, float range_);
+	// Queue preparing to aim.
+	void PushActionPrepareAim(ActionInsertMode Mode_);
+	// Queue ending aim.
+	void PushActionAimEnd(ActionInsertMode Mode_);
+	// Queue throwing to a position.
+	void PushActionThrow(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue equipping or unequipping a weapon.
+	void PushActionEquipWeapon(ActionInsertMode Mode_, bool equip_);
+	// Queue shooting at a target.
+	void PushActionShoot(ActionInsertMode Mode_, Actor *Target_);
+	// Queue a redirect action.
+	void PushActionRedirect(ActionInsertMode Mode_);
+	// Queue redirecting a car.
+	void PushActionRedirectCar(ActionInsertMode Mode_, bool doNotChangePathDirection_=false, bool skipCheckOnFirst_ = false);
+	// Queue a negotiation action.
+	void PushActionNegotiate(ActionInsertMode Mode_, Actor *Target_);
+	// Queue following a named path.
+	void PushActionUsePath(ActionInsertMode Mode_, const char *Path_, float Speed_);
+	// Queue following a path object.
+	void PushActionUsePath(ActionInsertMode Mode_, Path *Path_, bool Forward_, float Speed_, bool forceUseRF_ = false);
+	// Queue flying to a position.
+	void PushActionFlyTo(ActionInsertMode Mode_, const Vector &Pos_, bool landing_, float landingDirection_);
+	// Queue flying along a path.
+	void PushActionFlyTo(ActionInsertMode Mode_, Path *path_, int startNode_ = -1, int endNode_ = -1);
+	// Queue repairing a target.
+	void PushActionRepair(ActionInsertMode Mode_, Actor *Target_);
+	// Queue aerial extinguishing at a position.
+	void PushActionAirExtinguish(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue installing on a target actor.
+	void PushActionInstall(ActionInsertMode Mode_, Actor *Target_);
+	// Queue installing by target ID.
+	void PushActionInstall(ActionInsertMode Mode_, int ID_);
+	// Queue deinstalling current installation.
+	void PushActionDeinstall(ActionInsertMode Mode_);
+	// Queue deleting the action owner.
+	void PushActionDeleteOwner(ActionInsertMode Mode_);
+	// Queue emitting particles.
+	void PushActionEmitParticles(ActionInsertMode Mode_, const char * name_, float time_);
+	// Queue moving while using a hose.
+	void PushActionMoveWithHose(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue moving with a rescue dog.
+	void PushActionMoveWithDog(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue pulling a target.
+	void PushActionPull(ActionInsertMode Mode_,Actor *Target_);
+	// Queue stopping pull action.
+	void PushActionStopPulling(ActionInsertMode Mode_);
+	// Queue putting target into a car.
+	void PushActionPutInCar(ActionInsertMode Mode_, Actor *Target_);
+	// Queue opening a door child.
+	void PushActionOpenDoor(ActionInsertMode Mode_, Actor *Target_, int childID_);
+	// Queue entering a basket.
+	void PushActionEnterBasket(ActionInsertMode Mode_, Actor *Target_);
+	// Queue lowering basket to a position.
+	void PushActionBasketDown(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue entering a house by actor target.
+	void PushActionEnterHouse(ActionInsertMode Mode_, Actor *Target_);
+	// Queue entering a house by target ID.
+	void PushActionEnterHouse(ActionInsertMode Mode_, int TargetID_);
+	// Queue leaving a house.
+	void PushActionLeaveHouse(ActionInsertMode Mode_, Actor *Target_);
+	// Queue raising the basket.
+	void PushActionBasketUp(ActionInsertMode Mode_);
+	// Queue using the cannon.
+	void PushActionUseCannon(ActionInsertMode Mode_);
+	// Queue stopping cannon usage.
+	void PushActionStopUseCannon(ActionInsertMode Mode_);
+	// Queue cannon extinguishing on a target.
+	void PushActionCannonExtinguish(ActionInsertMode Mode_, Actor *Target_, float Energy_, bool Cool_ = false);
+	// Queue turning toward a base target.
+	void PushActionTurnBase(ActionInsertMode Mode_, Actor *Target_);
+	// Queue evacuating a target.
+	void PushActionEvacuate(ActionInsertMode Mode_, Actor *Target_);
+	// Queue halting nearby units.
+	void PushActionHalt(ActionInsertMode Mode_, float radius, HaltType type);
+	// Queue enabling or disabling an effect.
+	void PushActionEnableEffect(ActionInsertMode Mode_, bool enable_);
+	// Queue a dive action.
+	void PushActionDive(ActionInsertMode Mode_,float duration);
+	// Queue interrupting an animation.
+	void PushActionInterruptAnim(ActionInsertMode Mode_, const char *Anim_);
+	// Queue interrupting an animation with timing options.
+	void PushActionInterruptAnim(ActionInsertMode Mode_, const char *Anim_, float Time_, bool ReturnToIdle_ = false);
+	// Queue lifting a target with rope.
+	void PushActionLiftWithRope(ActionInsertMode Mode_, Actor *Target_);
+	// Queue lowering on rope to a position.
+	void PushActionLetDownOnRope(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue cooling a target.
+	void PushActionCool(ActionInsertMode Mode_, Actor *Target_);
+	// Queue lifting a target with crane.
+	void PushActionLiftWithCrane(ActionInsertMode Mode_, Actor *Target_);
+	// Queue dropping with crane at a position.
+	void PushActionDropWithCrane(ActionInsertMode Mode_, const Vector &Pos_);
+	// Queue using a target object.
+	void PushActionUse(ActionInsertMode Mode_, Actor *Target_);
+	// Queue rotating a target over time.
+	void PushActionRotateTarget(ActionInsertMode Mode_, Actor *Target_, float pitch_, float yaw_, float roll_, float timeInSec_ );
+	// Queue helicopter follow behavior.
+	void PushActionHeliFollow(ActionInsertMode Mode_, Actor *Target_);
+	// Queue dog search behavior.
+	void PushActionDogSearch(ActionInsertMode Mode_);
+	// Queue throwing a stone.
+	void PushActionThrowStone(ActionInsertMode Mode_, const Vector &Pos_, float lifeDuration_);
+	// Queue calling a dog to a target.
+	void PushActionCallDog(ActionInsertMode Mode_, Actor* Target_);
+	// Queue dog digging for a duration.
+	void PushActionDogDig(ActionInsertMode Mode_, float time_);
+	// Queue fist fighting a target.
+	void PushActionFistFight(ActionInsertMode Mode_, Actor* Target_, bool StreetFight_ = false);
+	// Queue jumping on a pad target.
+	void PushActionJumpOnPad(ActionInsertMode Mode_, Actor* Target_);
+	// Queue emptying a boat.
+	void PushActionEmptyBoat(ActionInsertMode Mode_);
+	// Queue crossing a bridge.
+	void PushActionCrossBridge(ActionInsertMode Mode_, int BridgeID_);
+	// Queue examining a vehicle.
+	void PushActionExamineVehicle(ActionInsertMode Mode_, Actor* Target_);
+	// Queue jumping to a position.
+	void PushActionJump(ActionInsertMode Mode_, const Vector &Pos_, bool useFindFreePos_=false);
+	// Queue turning water on.
+	void PushActionWaterOn(ActionInsertMode Mode_);
+	// Queue turning water off.
+	void PushActionWaterOff(ActionInsertMode Mode_);
+	// Queue wolfpack waiting logic.
+	void PushActionWolfpackWait(ActionInsertMode Mode_, Actor* VObject_, int TargetNumber_);
+	// Queue disappearing with optional fade out.
+	void PushActionDisappear(ActionInsertMode Mode_, float DisappearTime_, float WaitTime_ = 0.f, bool fadeOut_ = false);
+	// Queue putting the object in base.
+	void PushActionPutInBase(ActionInsertMode Mode_);
+	// Queue toggling light state.
+	void PushActionLightOn(ActionInsertMode Mode_, bool on_);
+	// Queue executing a command on a target.
+	void PushActionExecuteCommand(ActionInsertMode Mode_, const char* Command_, Actor* Target_=NULL, int ChildID_=0, bool CheckTarget_=true);
+	// Queue executing a command at a position.
+	void PushActionExecuteCommand(ActionInsertMode Mode_, const char* Command_, Vector &Pos_);
+	// Queue scouting a house.
+	void PushActionScoutHouse(ActionInsertMode Mode_, Actor* Target_);
+	// Queue scouting an area.
+	void PushActionScoutArea(ActionInsertMode Mode_);
+	// Queue evacuating a person.
+	void PushActionEvacuatePerson(ActionInsertMode Mode_, Actor *Target_);
+	// Queue letting down an engineer.
+	void PushActionLetDownEngineer(ActionInsertMode Mode_);
+	// Queue unfastening a person.
+	void PushActionUnfastenPerson(ActionInsertMode Mode_);
+	// Queue unloading transport evac.
+	void PushActionUnloadTransEvac(ActionInsertMode Mode_);
+	// Queue sending people to a target area.
+	void PushActionSendPeople(ActionInsertMode Mode_, float Radius_, const Vector& TargetPos_);
+	// Queue moving equipment to an object.
+	void PushActionEquipmentToObject(ActionInsertMode Mode_, GameObject *equipment_);
+	// Queue contamination propagation from an object.
+	void PushActionContaminationByObject(ActionInsertMode Mode_, GameObject *parent_, ContaminationType contaminationType_, float range_);
+	// Queue lowering lift height.
+	void PushActionLiftDown(ActionInsertMode Mode_, float targetHeight_, float speed_, bool downward_ = true);
+	// Queue appearing with speed.
+	void PushActionAppear(ActionInsertMode Mode_, float speed_);
+	// Queue throwing a molotov.
+	void PushActionThrowMolotov(ActionInsertMode Mode_, const Vector& TargetPos_, float Power_, float Radius_ = 250.f);
+	// Queue linking with a person.
+	void PushActionLinkPerson(ActionInsertMode Mode_, Person *Person_);
+	// Queue checking a free connector on a target.
+	void PushActionCheckFreeConnector(ActionInsertMode Mode_, Actor *Target_);
+	// Queue moving a target object to a point.
+	void PushActionMoveToPoint(ActionInsertMode Mode_, GameObject *Target_, float Speed_, float Time_ = 0.0f);
+
+	// Change the prototype.
+	void ChangePrototype(const char *Proto_);
+	// Change the model.
+	void ChangeModel(const char *Model_);
+	// Return true if the object can receive commands.
+	bool IsCommandable() const;
+	// Pause particle effects.
+	void PauseParticleEffect();
+	// Resume particle effects.
+	void ResumeParticleEffect();
+	// Pause particle effects on a child.
+	void PauseParticleEffectChild(const char *name_);
+	// Get objects by name within range.
+	GameObjectList GetObjectsWithNameInRange(float radius_, const char* name_, int filter_ = ACTOR_OBJECT | ACTOR_PERSON | ACTOR_VEHICLE | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+	// Get child position by name.
+	Vector GetChildPosition(const char* name_) const;
+	// Set effect and parameters.
+	void SetEffect(const char* effect_, const char* params_);
+	// Queue shooting at a target ID.
+	void PushActionShoot(ActionInsertMode Mode_, int TargetID_);
+	// Queue following a named path.
+	void PushActionUsePath(ActionInsertMode Mode_, const char *Path_, float Speed_ = 0.f, bool forward_ = true);
+	// Queue following a path object.
+	void PushActionUsePath(ActionInsertMode Mode_, Path *Path_, bool Forward_, float Speed_ = 0.f, bool forceUseRF_ = false);
+	// Queue scouting an area.
+	void PushActionScoutArea(ActionInsertMode Mode_);
+	// Queue checking a victim.
+	void PushActionCheckVictim(ActionInsertMode Mode_, Person *Person_, float WaitTime_);
+	// Attach a sound reference.
+	void AttachSound(int soundRef_);
+	// Detach a sound reference.
+	void UnattachSound(int soundRef_);
+};

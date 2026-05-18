@@ -1,0 +1,31 @@
+﻿// XML GUI dialog helper for runtime UI manipulation.
+class GameDialog
+{
+	// Construct an invalid dialog wrapper.
+	GameDialog();
+	// Release this dialog wrapper.
+	~GameDialog(void);
+
+	// Load a dialog definition from file.
+	bool Load(const char *file_);
+
+	// Show or hide the entire dialog.
+	void Show(bool show_);
+	// Show or hide a named dialog element.
+	void Show(const char *element_, bool show_);
+
+	// Return text from a static text element.
+	const char* StaticText_GetText(const char *element_);
+	// Set text on a static text element.
+	bool StaticText_SetText(const char *element_, const char *text_);
+
+	// Return text from a text edit element.
+	const char* TextEdit_GetText(const char *element_);
+	// Set text on a text edit element.
+	bool TextEdit_SetText(const char *element_, const char* text_);
+
+	// Return toggle button state.
+	bool Togglebutton_GetValue(const char *toggleButton_);
+	// Set toggle button state.
+	bool Togglebutton_SetValue(const char *toggleButton_, bool down_);
+};

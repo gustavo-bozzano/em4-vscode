@@ -1,0 +1,46 @@
+﻿// Fire simulation actor API for burn state and temperature/material control.
+class FireObject: public Actor
+{
+	// Return true if this fire object is still valid in the world.
+	virtual bool IsValid() const;
+
+	// Advance burn simulation for this fire object.
+	void Burn();
+	// Set fire object temperature directly.
+	void SetTemperature(float degree_);
+	// Return maximum burn temperature for the current material.
+	float GetMaxMaterialTemperature() const;
+	// Set the material name used for fire behavior.
+	void SetMaterial(const char *material_);
+
+	// Start large fire effect.
+	void Large();
+	// Start small fire effect.
+	void Small();
+	// Stop large fire effect.
+	void StopLarge();
+	// Stop small fire effect.
+	void StopSmall();
+	// Stop all fire effects.
+	void Stop();
+
+	// Return true if the fire object is currently burning.
+	bool IsBurning();
+	// Return true if the fire object has fully burned out.
+	bool IsBurned();
+
+	// Enable or disable fire simulation for this object.
+	void SetActive(bool active_);
+	// Restart fire simulation from its initial state.
+	void Restart();
+
+	// Return current world position of the fire object.
+	virtual Vector GetPosition() const;
+	// Move fire object to a new world position.
+	virtual void SetPosition(const Vector &v_);
+	
+	// Return current burn energy.
+	float GetEnergy() const;
+	// Set current burn energy.
+	void SetEnergy(float energy_);
+};

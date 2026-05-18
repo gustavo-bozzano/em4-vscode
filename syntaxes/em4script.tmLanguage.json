@@ -1,0 +1,284 @@
+{
+  "name": "EM4 Script",
+  "scopeName": "source.em4script",
+  "patterns": [
+    { "include": "#strings" },
+    { "include": "#comments" },
+    { "include": "#preprocessor" },
+    { "include": "#declarations" },
+    { "include": "#keywords" },
+    { "include": "#variables" },
+    { "include": "#literals" },
+    { "include": "#types" },
+    { "include": "#enums" },
+    { "include": "#functions" },
+    { "include": "#members" },
+    { "include": "#operators" },
+    { "include": "#punctuation" },
+    { "include": "#numbers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.em4script",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.em4script",
+          "begin": "/\\*",
+          "beginCaptures": { "0": { "name": "punctuation.definition.comment.begin.em4script" } },
+          "end": "\\*/",
+          "endCaptures": { "0": { "name": "punctuation.definition.comment.end.em4script" } }
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.em4script",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            { "name": "constant.character.escape.em4script", "match": "\\\\." }
+          ]
+        }
+      ]
+    },
+    "preprocessor": {
+      "patterns": [
+        {
+          "name": "meta.preprocessor.directive.em4script",
+          "match": "^(\\s*#\\s*)(include|define|ifdef|ifndef|endif|if|elif|else|pragma)\\b",
+          "captures": {
+            "1": { "name": "punctuation.definition.preprocessor.em4script" },
+            "2": { "name": "keyword.control.preprocessor.em4script" }
+          }
+        },
+        {
+          "name": "meta.preprocessor.define.em4script",
+          "match": "^\\s*#\\s*define\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "entity.name.constant.preprocessor.em4script" }
+          }
+        },
+        {
+          "name": "meta.preprocessor.include.path.em4script",
+          "match": "^\\s*#\\s*include\\s*(<[^>]+>)",
+          "captures": {
+            "1": { "name": "string.other.include-path.em4script" }
+          }
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "name": "meta.declaration.type.em4script",
+          "match": "\\b(namespace|class|struct|enum|object)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "storage.type.declaration.em4script" },
+            "2": { "name": "entity.name.type.em4script" }
+          }
+        },
+        {
+          "name": "meta.declaration.inheritance.em4script",
+          "begin": "\\b(?:class|struct|object)\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:",
+          "end": "(?=\\{|$)",
+          "patterns": [
+            {
+              "name": "entity.other.inherited-class.em4script",
+              "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.em4script",
+          "match": "\\b(if|else|for|while|do|switch|case|default|break|continue|return|new|delete|try|catch|throw)\\b"
+        },
+        {
+          "name": "storage.modifier.em4script",
+          "match": "\\b(virtual|static|const|override|final|public|private|protected)\\b"
+        }
+      ]
+    },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.language.em4script",
+          "match": "\\b(this|super)\\b"
+        },
+        {
+          "name": "meta.variable.declaration.builtin-type.em4script",
+          "match": "\\b(?:const\\s+)?(?:void|bool|int|float|char|unsigned|signed|string)\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=(?:=|;|,|\\)|\\]))",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
+          "name": "meta.variable.declaration.custom-type.em4script",
+          "match": "\\b(?:const\\s+)?[A-Z][A-Za-z0-9_]*\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=(?:=|;|,|\\)|\\]))",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
+          "name": "meta.variable.assignment.em4script",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|\\+=|-=|\\*=|/=|%=|<<=|>>=|&=|\\|=|\\^=))",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.em4script",
+          "match": "\\b(true|false|null)\\b"
+        },
+        {
+          "name": "constant.other.allcaps.em4script",
+          "match": "\\b[A-Z][A-Z0-9_]{2,}\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.em4script",
+          "match": "\\b(void|bool|int|float|char|unsigned|signed|string)\\b"
+        },
+        {
+          "name": "entity.name.type.class.em4script",
+          "match": "\\b([A-Z][A-Za-z0-9_]*)\\b(?=\\s+(?:[*&]\\s*)?[A-Za-z_][A-Za-z0-9_]*\\s*(?:[=;,)\\[]))",
+          "captures": {
+            "1": { "name": "entity.name.type.class.em4script" }
+          }
+        },
+        {
+          "name": "meta.instantiation.em4script",
+          "match": "\\b(new)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "keyword.control.em4script" },
+            "2": { "name": "entity.name.type.class.em4script" }
+          }
+        }
+      ]
+    },
+    "enums": {
+      "patterns": [
+        {
+          "name": "meta.enum.member.access.em4script",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(::)([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "entity.name.type.enum.em4script" },
+            "2": { "name": "punctuation.accessor.em4script" },
+            "3": { "name": "constant.other.enum.em4script" }
+          }
+        },
+        {
+          "name": "meta.enum.declaration.body.em4script",
+          "begin": "\\benum\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\{",
+          "end": "\\}",
+          "patterns": [
+            {
+              "name": "constant.other.enum.em4script",
+              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}))"
+            }
+          ]
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "entity.name.function.definition.em4script",
+          "match": "^\\s*(?:virtual\\s+|static\\s+)?(?:[A-Za-z_][A-Za-z0-9_:\\*\\&<>]*\\s+)+([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.em4script" }
+          }
+        },
+        {
+          "name": "entity.name.function.call.em4script",
+          "match": "\\b(?!if\\b|for\\b|while\\b|switch\\b|return\\b)([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.em4script" }
+          }
+        }
+      ]
+    },
+    "members": {
+      "patterns": [
+        {
+          "name": "meta.member.access.em4script",
+          "match": "(->|\\.|::)\\s*([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "punctuation.accessor.em4script" },
+            "2": { "name": "variable.other.member.em4script" }
+          }
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.em4script",
+          "match": "==|!=|<=|>=|&&|\\|\\||\\+\\+|--|<<|>>|[-+*/%<>=!&|^~?:]"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.em4script",
+          "match": "\\b0[xX][0-9A-Fa-f]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.em4script",
+          "match": "\\b\\d+\\.\\d*(?:[eE][+-]?\\d+)?[fF]?\\b|\\b\\d+[eE][+-]?\\d+[fF]?\\b"
+        },
+        {
+          "name": "constant.numeric.em4script",
+          "match": "\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.em4script",
+          "match": "[,;]"
+        },
+        {
+          "name": "punctuation.section.braces.begin.em4script",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.braces.end.em4script",
+          "match": "\\}"
+        },
+        {
+          "name": "punctuation.section.parens.begin.em4script",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.section.parens.end.em4script",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.section.brackets.begin.em4script",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.section.brackets.end.em4script",
+          "match": "\\]"
+        }
+      ]
+    }
+  }
+}

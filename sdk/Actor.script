@@ -1,0 +1,151 @@
+﻿// Runtime actor categories available in the world.
+enum ActorType
+{
+	ACTOR_UNKNOWN,
+	ACTOR_FLOOR,
+	ACTOR_OBJECT,
+	ACTOR_HOUSE,
+	ACTOR_VEHICLE,
+	ACTOR_PERSON,
+	ACTOR_LIQUID,
+	ACTOR_VIRTUAL,
+	ACTOR_FIREOBJECT,
+	ACTOR_PATH,
+	ACTOR_FORCEFIELD,
+	ACTOR_FORCEVOLUME,
+	ACTOR_TRIGGER,
+	ACTOR_STREET,
+	ACTOR_OPEN_HOUSE,
+	ACTOR_SPAWNPOINT,
+	ACTOR_DETAILPOLYGON,
+	ACTOR_WAITINGPOINT,
+	ACTOR_AMBIENTPOLYGON,
+	ACTOR_BRIDGEINSTALLPOINT,
+	ACTOR_STOPPINGPOINT
+};
+
+// Target point selectors used for interaction/animation anchoring.
+enum TargetPoint
+{
+	TARGET_ANY,
+	TARGET_EQUIPMENTDOOR,
+	TARGET_SHEARSDOOR,
+	TARGET_PASSENGERDOOR,
+	TARGET_REARDOOR,
+	TARGET_FIREHOSE_HOOKUP,
+	TARGET_ENGINE,
+	TARGET_EXTINGUISH,
+	TARGET_ENGINE_EXTINGUISH,
+	TARGET_AXE,
+	TARGET_CHAINSAW,
+	TARGET_ENTRANCEDOOR,
+	TARGET_MEGAPHONE_DISTANCE,
+	TARGET_DLK_BASKET,
+	TARGET_LOADUP,
+	TARGET_ENTRY_WINDOW_PARKING,
+	TARGET_DLK_BASKET_BASE,
+	TARGET_TREATMENT,
+	TARGET_UNLOAD,
+	TARGET_ENTRY_WINDOW,
+	TARGET_INSTALL_FGRB,
+	TARGET_SHOOT,
+	TARGET_FOLLOW,
+	TARGET_DLK_EXTINGUISH,
+	TARGET_UNLOAD_TFMB,
+	TARGET_FLAME_EFFECT,
+	TARGET_CROSS_BRIDGE,
+	TARGET_OPPOSITE_BRIDGE,
+	TARGET_EXTINGUISH_PERSON,
+	TARGET_PONTON_BRIDGE,
+	TARGET_TOUCHPERSON,
+	TARGET_USE,
+	TARGET_OBJECTSURFACE,
+	TARGET_FREE_CONNECTOR,
+	TARGET_RANDOM,
+	TARGET_HOUSE_SAFE_DISTANCE,
+
+	TARGET_MAX
+};
+
+// Terrain capability classes used by routing and placement logic.
+enum TerrainClass
+{
+	TERRAIN_ANYTHING,
+	TERRAIN_CAR,
+	TERRAIN_TRUCK,
+	TERRAIN_OFFROAD,
+	TERRAIN_TRACKVEHICLE,
+	TERRAIN_BOAT,
+	TERRAIN_SHIP,
+	TERRAIN_DIVER,
+	TERRAIN_AIRPLANE,
+	TERRAIN_CIVILIAN,
+	TERRAIN_SQUAD,
+	TERRAIN_SQUADCAR,
+	TERRAIN_HELILANDING,
+	TERRAIN_ANIMAL,
+	TERRAIN_VIRTUALFLOOR,
+	TERRAIN_TRAFFIC,
+	
+	TERRAIN_NUMCLASSES
+};
+
+// Base actor API shared by world entities.
+class Actor
+{
+	const char *GetName();
+
+	// Return current world position of this actor.
+	virtual Vector GetPosition() const;
+	// Teleport/move actor to world position v_.
+	virtual void SetPosition(const Vector &v_);
+		
+	// Return a named interaction target point relative to initiator.
+	Vector GetTargetPoint(Actor *Initiator, TargetPoint Pnt);
+	// Return a named interaction target point relative to initiator.
+	Vector GetTargetPoint(Actor &Initiator, TargetPoint Pnt);
+				
+	// Return approximate 3D bounding radius.
+	float GetBoundingRadius();
+	// Return approximate horizontal (XY) bounding radius.
+	float GetBoundingRadiusXY();
+	// Return horizontal distance between this and Target_ bounding radii.
+	float GetBoundingRadiusDistXYToObject(Actor *Target_);
+	// Draw debug bounding box with optional RGB color.
+	virtual void DrawBoundingBox(unsigned char red_=255, unsigned char green_=255, unsigned char blue_=255);
+	// Set terrain class by virtual terrain name.
+	bool SetVirtualObjectTerrain(const char* terrain_);
+	// Set terrain class directly.
+	bool SetTerrain(TerrainClass terrain_);
+	// Remove actor from routing/navigation system.
+	bool RemoveFromRouter();
+
+	// Return true if this actor has a valid world representation.
+	virtual bool IsValid() const;
+	// Return actor runtime type.
+	ActorType GetType() const;
+	// Make actor visible.
+	void Show();
+	// Hide actor.
+	void Hide();
+	// Return true when actor is currently hidden.
+	bool IsHidden();
+	// Return unique actor ID.
+	int GetID() const;
+	// Return true if actor name equals Name_.
+	bool HasName(const char *Name_);
+	// Return true if actor name starts with Name_.
+	bool HasNamePrefix(const char *Name_);
+	
+	// Store script-defined integer metadata on actor.
+	void SetUserData(int Data);
+	// Return script-defined integer metadata.
+	int GetUserData() const;
+	// Attach a looping/attached sound and return sound handle ID.
+	int AttachSound(const char *Filename_);
+	// Stop and remove attached sound by handle ID.
+	void UnattachSound(int ID_);
+
+	// Return true if position pos lies inside this virtual object actor.
+	bool IsInsideVirtualObject(Vector &pos);
+};

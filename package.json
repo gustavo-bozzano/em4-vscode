@@ -1,0 +1,67 @@
+{
+  "name": "em4-script",
+  "displayName": "EM4 Script",
+  "description": "Language support for Emergency 4 script",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "em4",
+    "emergency4",
+    "lsp",
+    "script",
+    "911 first responders"
+  ],
+  "activationEvents": [
+    "onLanguage:em4script"
+  ],
+  "main": "./client/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "em4script",
+        "icon": 
+          {
+            "light": "./icons/em4script-light.png",
+            "dark": "./icons/em4script-dark.png"
+          },
+        "aliases": [
+          "EM4 Script",
+          "Emergency 4 Script",
+          "911 First Responders Script"
+        ],
+        "extensions": [
+          ".script"
+        ],
+        "configuration": "./language-configuration/em4script.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "em4script",
+        "scopeName": "source.em4script",
+        "path": "./syntaxes/em4script.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "check": "node --check client/extension.js && node --check server/server.js",
+    "test:unit": "node --test test/**/*.test.js",
+    "test": "npm run check && npm run test:unit"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0"
+  }
+}

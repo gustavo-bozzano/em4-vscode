@@ -1,0 +1,161 @@
+﻿// Typed list wrapper for Actor references.
+class ActorList
+{	
+		// Construct an empty actor list.
+		ActorList();
+		// Construct an actor list filtered by name.
+		ActorList(const char *Name_);
+		// Copy-construct from another actor list.
+		ActorList(const ActorList &Copy_);
+		// Construct an actor list filtered by actor type.
+		ActorList(ActorType type_);
+		// Release this actor list wrapper.
+		~ActorList();
+		
+		// Return number of actors in the list.
+		inline int GetNumActors() const { return mNumActors; }
+		Actor *GetActor(int Index_) const;
+};
+
+// Typed list wrapper for GameObject references.
+class GameObjectList
+{
+		// Construct an empty game object list.
+		GameObjectList();
+		// Construct a game object list filtered by name.
+		GameObjectList(const char *Name_);
+		// Copy-construct from another game object list.
+		GameObjectList(const GameObjectList &Copy_);
+		// Return all game objects currently in the world.
+		GameObjectList GetGameObjects();
+		// Return game objects filtered by type.
+		GameObjectList GetGameObjects(GameObjectType type_);
+		// Return game objects matching a name.
+		GameObjectList GetGameObjects(const char *Name_);
+		// Return game objects whose names start with Prefix_.
+		GameObjectList GetGameObjectsWithPrefix(const char* Prefix_);
+		// Return currently selected game objects.
+		GameObjectList GetSelectedGameObjects();
+		// Release this game object list wrapper.
+		~GameObjectList();
+		
+	 	// Return number of objects in the list.
+ 		inline int GetNumObjects() const { return mNumObjects; }
+		GameObject *GetObject(int Index_) const;
+		// Return number of burning objects in the list.
+		int GetNumBurningObjects() const;
+		// Return number of objects with a matching status.
+		int GetNumObjectsWithStatus(int status_);
+		// Return true if the list contains a squad unit.
+		bool ContainsSquad() const;
+		// Return true if the list contains a non-squad unit.
+		bool ContainsNonSquad() const;
+		// Return true if the list contains a police squad.
+		bool ContainsPoliceSquad() const;
+};
+
+// Typed list wrapper for Person references.
+class PersonList
+{	
+		// Construct an empty person list.
+		PersonList();
+		// Construct a person list filtered by name.
+		PersonList(const char *Name_);
+		// Construct a person list filtered by role.
+		PersonList(PersonRole role_);
+		// Copy-construct from another person list.
+		PersonList(const PersonList &Copy_);
+		// Release this person list wrapper.
+		~PersonList();
+		
+		// Return number of persons in the list.
+		inline int GetNumPersons() const { return mNumObjects; }
+		Person *GetPerson(int Index_) const;
+};
+
+// Typed list wrapper for Vehicle references.
+class VehicleList
+{
+		// Construct an empty vehicle list.
+		VehicleList();
+		// Construct a vehicle list filtered by name.
+		VehicleList(const char *Name_);
+		// Build list with vehicle types in inclusive [min_, max_] range.
+		VehicleList(VehicleType min_, VehicleType max_);
+		// Copy-construct from another vehicle list.
+		VehicleList(const VehicleList &Copy_);
+		// Release this vehicle list wrapper.
+		~VehicleList();
+		
+		// Return number of vehicles in the list.
+		inline int GetNumVehicles() const { return mNumObjects; }
+		Vehicle *GetVehicle(int Index_) const;
+};
+
+// Typed list wrapper for FireObject references.
+class FireObjectList
+{	
+		// Construct an empty fire object list.
+		FireObjectList();
+		// Construct a fire object list filtered by name.
+		FireObjectList(const char *Name_);
+		// Copy-construct from another fire object list.
+		FireObjectList(const FireObjectList &Copy_);
+		// Release this fire object list wrapper.
+		~FireObjectList();
+
+		// Return number of fire objects in the list.
+		inline int GetNumFireObjects() const { return mNumObjects; }
+		FireObject *GetFireObject(int Index_) const;
+};
+
+// Typed list wrapper for OpenHouse references.
+class OpenHouseList
+{		
+	// Construct an empty open house list.
+	OpenHouseList();
+	// Construct an open house list filtered by name.
+	OpenHouseList(const char *Name_);
+	// Copy-construct from another open house list.
+	OpenHouseList(const OpenHouseList &Copy_);
+	// Release this open house list wrapper.
+	~OpenHouseList();
+
+	// Return number of open houses in the list.
+	inline int GetNumOpenHouses() const { return mNumObjects; }
+	OpenHouse *GetOpenHouse(int Index_) const;
+};
+
+// Typed list wrapper for Path references.
+class PathList
+{	
+	// Construct an empty path list.
+	PathList();
+	// Construct a path list filtered by name.
+	PathList(const char *Name_);
+	// Copy-construct from another path list.
+	PathList(const PathList &Copy_);
+	// Release this path list wrapper.
+	~PathList();
+
+	// Return number of paths in the list.
+	inline int GetNumPaths() const { return mNumObjects; }
+	Path *GetPath(int Index_) const;
+};
+
+// Typed list wrapper for SpawnPoint references.
+class SpawnPointList
+{		
+	// Construct an empty spawn point list.
+	SpawnPointList();
+	// Construct a spawn point list filtered by name.
+	SpawnPointList(const char *Name_);
+	// Copy-construct from another spawn point list.
+	SpawnPointList(const SpawnPointList &Copy_);
+	// Release this spawn point list wrapper.
+	~SpawnPointList();
+
+	// Return number of spawn points in the list.
+	inline int GetNumSpawnPoints() const { return mNumObjects; }
+	SpawnPoint *GetSpawnPoint(int Index_) const;
+};

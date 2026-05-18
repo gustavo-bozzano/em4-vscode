@@ -1,0 +1,202 @@
+﻿// Command UI grouping identifiers.
+enum CommandGroup
+{
+	CGROUP_DEFAULT			= 0,
+	CGROUP_ARREST			= 1,
+	CGROUP_FIREHOSE			= 2,
+	CGROUP_CARRY_PERSON		= 3,
+	CGROUP_PULLING			= 4,
+	CGROUP_DLK_BASKET		= 5,
+	CGROUP_LIGHT			= 6,
+	CGROUP_CANNON_WAW		= 7,
+	CGROUP_DRAW_WEAPON		= 8,
+	CGROUP_INSTALL			= 9,
+	CGROUP_SEARCHLIGHT		= 10,
+	CGROUP_SHIPDROP			= 11,
+	CGROUP_UNLOADVEHICLE	= 12,
+	CGROUP_BUCKET			= 13,
+	CGROUP_DOG				= 14,
+	CGROUP_PICKUP			= 15,
+	CGROUP_CRANE			= 16,
+	CGROUP_GETEQUIPMENT		= 100
+};
+
+// Bit-level command target restrictions.
+enum CommandRestriction
+{
+	RESTRICT_NONE,
+	RESTRICT_LOCKED,
+	RESTRICT_USABLE,
+	RESTRICT_BULLDOZABLE,
+	RESTRICT_TRANSPORTABLE,
+	RESTRICT_ACCESSIBLE,
+	RESTRICT_COOLABLE,
+	RESTRICT_SHOOTABLE,
+	RESTRICT_CUTABLE,
+	RESTRICT_MEGAPHONE,
+	RESTRICT_RECOVERABLE,
+	RESTRICT_FLOTSAM,
+	RESTRICT_NOTDESTROYED,
+	RESTRICT_CARRYABLE_BD,
+	RESTRICT_HASFIREEXT,
+	RESTRICT_HASSHEARS,
+	RESTRICT_HASCHAINSAW,
+	RESTRICT_HASJUMPPAD,
+	RESTRICT_HASROADBLOCK,
+	RESTRICT_HASFLASHGRENADE,
+	RESTRICT_HASFIREAXE,
+	RESTRICT_HASFIREHOSE,
+	RESTRICT_PULLABLE,
+	RESTRICT_BURNING,
+	RESTRICT_NOTBURNING,
+	RESTRICT_LINKED,
+	RESTRICT_NOTLINKED,
+	RESTRICT_INJURED,
+	RESTRICT_NOTINJURED,
+	RESTRICT_ARRESTED,
+	RESTRICT_NOTARRESTED,
+	RESTRICT_IDLE,
+	RESTRICT_SELFEXECUTE
+};
+
+// Secondary command restrictions for specific target checks.
+enum CommandRestriction2
+{
+	RESTRICT2_NONE,
+	RESTRICT2_ISHYDRANT,
+	RESTRICT2_ISHYDRANTORSELF
+};
+
+// Existence predicates used by command availability checks.
+enum CommandPossibleExists
+{
+	CPE_CUTABLE_OBJECTS,
+	CPE_LOCKED_HOUSE,
+	CPE_HOUSE_FOR_JUMPPAD,
+	CPE_CAR_W_ENCLOSED_PERSON,
+	CPE_FREE_HOSE_CONNECTION,
+	CPE_COOLABLE_OBJECTS,
+	CPE_NONIJURED_PERSON,
+	CPE_FREE_DLK,
+	CPE_ACCESSIBLE_HOUSE,
+	CPE_EXTINGUISHABLE_OBJECTS,
+	CPE_OBJECTS_PULLABLE,
+	CPE_REPAIRABLE_CAR,
+	CPE_ASKABLE_PERSON,
+	CPE_INJURED_PERSON,
+	CPE_WOUNDED_SQUAD,
+	CPE_USABLE_WM_OBJECTS,
+	CPE_DROWNING_PERSONS,
+
+	CPE_ALWAYS
+};
+
+// Defines whether a command requires a connected firehose.
+enum CommandFirehoseNeed
+{
+	CFN_IGNORE,
+	CFN_NEEDED,
+	CFN_FAIL
+};
+
+// Base class for command definitions and command metadata.
+class CommandScript
+{
+		// Create a CommandScript instance wrapper.
+		CommandScript(const char *Class_, const char *Object_);
+		// Release this CommandScript wrapper.
+		virtual ~CommandScript();
+
+		// Set command bitmap name.
+		void SetBitmapName(const char *Name);
+		// Set action cursor.
+		void SetActionCursor(const char *Name);
+		// Set command icon.
+		void SetIcon(const char *Name);
+		// Set default cursor.
+		void SetCursor(const char *Name);
+		// Set command display name.
+		void SetCommandName(const char *Name);
+		// Show or hide command info text.
+		void SetInfotextVisible(bool Visible);
+		// Set valid target actor types.
+		void SetValidTargets(int Types_);
+		// Enable double-click activation.
+		void SetDoubleClickable(bool DblClickable_);
+		// Enable activation by left click.
+		void SetActivationByLeftClick(bool byLeftClick_);
+		// Set command group ID.
+		void SetGroupID(int ID_);
+		// Mark command as group leader.
+		void SetGroupLeader(bool IsLeader_);
+
+		// Set command restrictions.
+		void SetRestrictions(int Restrictions_);
+		// Add restriction and return success.
+		void AddRestriction(CommandRestriction Restriction_);
+		// Remove restriction and return success.
+		void RemoveRestriction(CommandRestriction Restriction_);
+		// Get command restrictions.
+		int GetRestrictions() const;
+
+		// Set secondary command restrictions.
+		void SetRestrictions2(int Restrictions_);
+		// Add restriction2 and return success.
+		void AddRestriction2(CommandRestriction2 Restriction_);
+		// Remove restriction2 and return success.
+		void RemoveRestriction2(CommandRestriction2 Restriction_);
+		// Get secondary command restrictions.
+		int GetRestrictions2() const;
+
+		// Enable command highlighting.
+		void SetHighlightingEnabled(bool enabled_);
+		// Keep command selected after use.
+		void SetKeepAsCurrentCommand(bool keep_);
+		// Deselect caller after activation.
+		void SetDeselectCaller(bool deselect_);
+		// Set existence requirement for possible targets.
+		void SetPossibleExists(int Exists_);
+		// Set equipment requirement for possible callers.
+		void SetPossibleEquipment(int Equipment_);
+		// Set allowed caller actor types.
+		void SetPossibleCallers(int Types_);
+		// Set connected firehose requirement.
+		void SetNeedsConnectedHose(CommandFirehoseNeed NeedsHose_);
+		// Set required car flag for command availability.
+		void SetNeedsCarWithFlagSet(int Flag_);
+		// Set command priority.
+		void SetPriority(int Priority_);
+		// Enable self-click activation.
+		void SetSelfClickActivation(bool activate_);
+};
+
+// Movement decision result mode returned by command helpers.
+enum MoveMode
+{
+	MOVE_ABORT,
+	MOVE_TO_POSITION,
+	MOVE_INTO_HOUSE,
+	MOVE_HOUSE_TO_HOUSE,
+	MOVE_HOUSE_TO_POSITION
+};
+
+// Structured movement decision payload.
+struct MoveResult
+{
+	MoveMode Mode;
+	Vector Target;
+	Vector Intermediate1;
+	Vector Intermediate2;	
+	bool UnInstall, BasketDown;
+	OpenHouse EnterHouse;
+	OpenHouse LeaveHouse;
+};
+
+// Shared command helper functions.
+namespace Commands
+{
+	// Resolve movement constraints and return a movement plan.
+	MoveResult CheckMoveConditions(GameObject *Caller, Actor *Target, int ChildID);
+	// Return whether caller can currently enter a vehicle.
+	bool IsEnterCarPossible(GameObject *Caller);
+};

@@ -1,0 +1,62 @@
+﻿// Weather system API for precipitation, fog, storms, and lightning effects.
+namespace Weather
+{
+	// Set rain particle intensity (usually in the range 0.0 to 1.0).
+	void SetRainIntensity(float intensity_);
+	// Return the current rain intensity.
+	float GetRainIntensity();
+	// Set snow particle intensity (usually in the range 0.0 to 1.0).
+	void SetSnowIntensity(float intensity_);
+	// Return the current snow intensity.
+	float GetSnowIntensity();
+	// Set fog density/intensity.
+	void SetFogIntensity(float intensity_);
+	// Return the current fog intensity.
+	float GetFogIntensity();
+	// Set one fog color channel by component index.
+	void SetFogColor(int component_, unsigned char value_);
+	// Return one fog color channel by component index.
+	unsigned char GetFogColor(int component_);
+	// Set storm intensity for weather storm effects.
+	void SetStormIntensity(float intensity_);
+	// Return the current storm intensity.
+	float GetStormIntensity();
+	// Set storm movement/update speed.
+	void SetStormSpeed(float speed_);
+	// Return the current storm speed.
+	float GetStormSpeed();
+	// Set lightning flash intensity.
+	void SetFlashIntensity(float intensity_);
+	// Return the current lightning flash intensity.
+	float GetFlashIntensity();
+	// Trigger an immediate lightning flash.
+	void SetFlashNow();
+	// Return true while a lightning flash is currently active.
+	bool IsFlashing();
+	// Enable or disable rain rendering.
+	void SetRainVisible(bool visible_);
+	// Enable or disable fog rendering.
+	void SetFogVisible(bool visible_);
+	// Enable or disable snow rendering.
+	void SetSnowVisible(bool visible_);
+	// Enable or disable storm effect rendering.
+	void SetStormVisible(bool visible_);
+	// Enable or disable lightning flash rendering.
+	void SetFlashVisible(bool visible_);
+	// Return true if rain rendering is enabled.
+	bool IsRainVisible();
+	// Return true if fog rendering is enabled.
+	bool IsFogVisible();
+	// Return true if snow rendering is enabled.
+	bool IsSnowVisible();
+	// Return true if storm rendering is enabled.
+	bool IsStormVisible();
+	// Return true if flash rendering is enabled.
+	bool IsFlashVisible();
+
+	// Enable or disable hail precipitation.
+	// Useful for scripts that switch weather presets dynamically.
+	void SetHail(bool hail_);
+	// Return true if hail precipitation is currently enabled.
+	bool GetHail();
+};

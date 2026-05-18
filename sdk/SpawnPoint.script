@@ -1,0 +1,25 @@
+﻿// Spawn point actor used to instantiate objects at predefined locations.
+class SpawnPoint : public Actor
+{
+	// Create a spawn point wrapper.
+	SpawnPoint();
+	// Create a spawn point wrapper from another spawn point.
+	SpawnPoint(const SpawnPoint& Obj_);
+	// Create a spawn point wrapper from a generic actor.
+	SpawnPoint(const Actor* Act_);
+	// Release this spawn point wrapper.
+	~SpawnPoint();
+
+	// Return true if the spawn point is valid.
+	virtual bool IsValid() const;
+	// Return the spawn point position.
+	virtual Vector GetPosition() const;
+
+	// Fill the position components with the spawn point location.
+	virtual void GetPosition(float &x_, float &y_, float &z_);
+
+	// Spawn a single object by name.
+	GameObject SpawnSingleObject(const char* Name_);
+	// Enable or disable the spawn point.
+	void SetEnabled(bool Enabled_);
+};

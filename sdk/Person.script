@@ -1,0 +1,403 @@
+﻿// Runtime health state of a person actor.
+enum PersonState
+{
+	PERSONSTATE_NORMAL,
+	PERSONSTATE_INJURED,
+	PERSONSTATE_COMATOSE,
+	PERSONSTATE_DEAD
+};
+
+// Cause of injury used by damage and medical systems.
+enum InjuryReason
+{
+	INJUREREASON_UNKNOWN,
+	INJUREREASON_FIRE,
+	INJUREREASON_SHOT,
+	INJUREREASON_ENERGY,
+	INJUREREASON_DROWN,
+	// Keep order in sync with ContaminationType.
+	INJUREREASON_CONTAM_ATOM,
+	INJUREREASON_CONTAM_CHEM,
+	INJUREREASON_CONTAM_BIO
+};
+
+// High-level role classification for a person.
+enum PersonRole
+{
+	ROLE_UNKNOWN,
+	ROLE_CIVILIAN,
+	ROLE_SQUAD,
+	ROLE_GANGSTER,
+	ROLE_DROWNING,
+	ROLE_ANIMAL
+};
+
+// Gender/age model category for a person actor.
+enum PersonGender
+{
+	GENDER_MALE,
+	GENDER_FEMALE,
+	GENDER_CHILD,
+	GENDER_ANIMAL
+};
+
+// AI behavior presets for civilians, squad units, gangsters, and animals.
+enum PersonBehaviour
+{
+	BEHAVIOUR_UNKNOWN				= 0,
+	BEHAVIOUR_CIVILIAN_NORMAL		= 0,
+	BEHAVIOUR_CIVILIAN_GAZER		= 1,
+	BEHAVIOUR_CIVILIAN_HOSTAGE		= 2,
+	BEHAVIOUR_CIVILIAN_TAXIUSER		= 3,
+	BEHAVIOUR_CIVILIAN_BUSUSER		= 4,
+	BEHAVIOUR_CIVILIAN_DRIVER		= 5,
+	BEHAVIOUR_CIVILIAN_PANIC		= 6,
+	BEHAVIOUR_SQUAD_UNKNOWN			= 0,
+	BEHAVIOUR_SQUAD_FIREFIGHTER		= 1,
+	BEHAVIOUR_SQUAD_POLICE			= 2,
+	BEHAVIOUR_SQUAD_RESCUE			= 3,
+	BEHAVIOUR_SQUAD_THW				= 4,
+	BEHAVIOUR_GANGSTER_ATTACKALL	= 0,
+	BEHAVIOUR_GANGSTER_ATTACKSQUAD	= 1,
+	BEHAVIOUR_GANGSTER_GUARDHOSTAGE	= 2,
+	BEHAVIOUR_GANGSTER_GUARDPASSAGE = 3,
+	BEHAVIOUR_GANGSTER_CIVILARMED	= 4,
+	BEHAVIOUR_GANGSTER_CIVILUNARMED = 5,
+	BEHAVIOUR_GANGSTER_THROWSTONES  = 6,
+	BEHAVIOUR_GANGSTER_FISTFIGHT	= 7,
+	BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART = 8,
+	BEHAVIOUR_GANGSTER_THROWMOLOTOV	= 9,
+	BEHAVIOUR_ANIMAL_NORMAL			= 0,
+	BEHAVIOUR_ANIMAL_CAT			= 1,
+	BEHAVIOUR_ANIMAL_SHEEP			= 2,
+	BEHAVIOUR_ANIMAL_COW			= 3,
+	BEHAVIOUR_ANIMAL_WOLF			= 4,
+	BEHAVIOUR_ANIMAL_HORSE			= 5,
+	BEHAVIOUR_ANIMAL_DEER			= 6,
+	BEHAVIOUR_ANIMAL_CROW			= 7,
+	BEHAVIOUR_ANIMAL_DOVE			= 8,
+	BEHAVIOUR_ANIMAL_SEAGULL		= 9,
+	BEHAVIOUR_ANIMAL_ATTACKINGWOLF	= 10,
+	BEHAVIOUR_ANIMAL_PIGEON			= 11,
+	BEHAVIOUR_ANIMAL_POLARBEAR		= 12
+};
+
+// Specialization type for squad/utility personnel.
+enum PersonType
+{
+	PT_NOSQUAD,
+	PT_UNKNOWN,
+	PT_ENGINEER,
+	PT_FIREFIGHTER_NORMAL,
+	PT_FIREFIGHTER_MASK,
+	PT_FIREFIGHTER_ABC,
+	PT_DIVER,
+	PT_SHOOTER,
+	PT_SHARPSHOOTER,
+	PT_PSYCHOLOGIST,
+	PT_SCOUT,
+	PT_POLICEMEN,
+	PT_DOCTOR,
+	PT_PARAMEDIC,
+	PT_LEADERRESCUEDOG
+};
+
+// Person actor API: health, behavior, interaction, and movement helpers.
+class Person : public GameObject
+{
+	// Create a Person instance wrapper.
+	Person();
+	// Create a Person instance wrapper.
+	Person(const Person& Obj_);
+	// Create a Person instance wrapper.
+	Person(const Actor* Act_);
+	// Create a Person instance wrapper.
+	Person(const GameObject* Obj_);
+	// Release this Person wrapper.
+	~Person();
+	// Return true if the person wrapper is valid.
+	virtual bool IsValid() const;
+
+	// Apply incoming energy or damage to the person.
+	void ReceiveEnergy(EnergyType Type_, float Amount_, Actor *Originator = NULL);
+	// Apply damage from a specific injury reason.
+	void Hurt(InjuryReason Reason_, float amount);
+	// Restore health by the given amount.
+	bool Heal(float Amount_);
+	// Injure the person and optionally make them unconscious.
+	void Injure(InjuryReason Reason_, bool becomeUnconscious_ = true);
+	// Kill the person using the provided injury reason.
+	void Kill(InjuryReason Reason_ = INJUREREASON_UNKNOWN);
+	// Mark the person as contaminated.
+	void Contaminate(ContaminationType Type_);
+	// Clear contamination of the given type.
+	void Decontaminate(ContaminationType Type_);
+	// Expose the person to contamination effects.
+	void ExposeContamination(ContaminationType Type_);
+
+	// Return true if the person is injured.
+	bool IsInjured() const;
+	// Return true if the person is comatose.
+	bool IsComatose() const;
+	// Return true if the person is dead.
+	bool IsDead() const;
+	// Return true if the person is a wounded squad member.
+	bool IsWoundedSquad() const;
+	// Return true if the person is contaminated.
+	bool IsContaminated() const;
+	// Return true if the person is arrested.
+	bool IsArrested() const;
+	// Return true if the person is carrying another person.
+	bool IsCarryingPerson() const;
+	// Return true if the person is carrying a contaminated person.
+	bool IsCarryingContaminatedPerson() const;
+	// Return true if the person is linked with another person.
+	bool IsLinkedWithPerson() const;
+	// Return true if the person is linked with a contaminated person.
+	bool IsLinkedWithContaminatedPerson() const;
+	// Return true if the person is being carried.
+	bool IsCarried() const;
+	// Return true if the person is drowning.
+	bool IsDrowning() const;
+	// Return true if the person is gazing.
+	bool IsGazing() const;
+	// Return true if the person is fleeing.
+	bool IsFleeing() const;
+	// Return true if the person is healing.
+	bool IsHealing() const;
+	// Return true if the person is classified.
+	bool IsClassified() const;
+	// Return true if the person is in a house with a ground entrance.
+	bool IsInHouseWithGroundEntrance() const;
+	// Return true if the person is currently being healed.
+	bool IsBeingHealed() const;
+
+	// Switch to the idle animation.
+	void SetIdleAnimation();
+	// Switch to the injured animation.
+	void SetInjuredAnimation();
+	// Mark the person as classified or unclassified.
+	void SetClassified(bool Classified_);
+
+	// Get life value.
+	float GetLife() const;
+	// Get health value.
+	float GetHealth() const;
+	// Set health value.
+	void SetHealth(float Health_);
+	// Set maximum health.
+	void SetMaxHealth(float maxHealth_);
+	// Get maximum health.
+	float GetMaxHealth() const;
+	// Set life value.
+	void SetLife(float Life_);
+	// Set maximum life.
+	void SetMaxLife(float maxLife_);
+	// Get maximum life.
+	float GetMaxLife();
+	// Set life drain while injured.
+	void SetInjuredLifeDrain(float drain_);
+	// Get life drain while injured.
+	float GetInjuredLifeDrain();
+	// Set life gain while under medical care.
+	void SetMedicalLifeGain(float gain_);
+	// Get life gain while under medical care.
+	float GetMedicalLifeGain();
+
+	// Return true if the person is contaminated with the given type.
+	bool IsContaminated(ContaminationType Type_) const;
+
+	// Return true if the person can dive.
+	bool CanDive()const;
+	// Get the current health state.
+	PersonState GetState() const;
+
+	// Get the current injury reason.
+	InjuryReason GetInjuryReason() const;
+	// Get resistance against the given injury reason.
+	float GetResistance(InjuryReason type_) const;
+	// Set resistance against the given injury reason.
+	bool SetResistance(InjuryReason type_, float amount_);
+
+	// Get the arrested person ID.
+	int GetArrestedID();
+	// Get the arrested person wrapper.
+	Person GetArrested()const;
+	// Get the carried person wrapper.
+	Person GetCarried()const;
+	// Update arrested state and optional capturer reference.
+	void Arrested(bool arrested_, GameObject *capturer_ = NULL);
+
+	// Get person role.
+	PersonRole GetRole() const;
+	// Set person role.
+	void SetRole(PersonRole Role_);
+	// Set person behavior profile.
+	bool SetBehaviour(PersonBehaviour Behaviour_);
+	// Get person behavior profile.
+	PersonBehaviour GetBehaviour() const;
+	// Return true if the person is a doctor.
+	bool IsDoctor() const;
+	// Return true if the person is a paramedic team member.
+	bool IsParamedicTeam() const;
+	// Return true if the person is a psychologist.
+	bool IsPsychologist() const;
+	// Return true if the person is a hostage.
+	bool IsHostage() const;
+	// Return true if the person is a rescue dog.
+	bool IsRescueDog() const;
+	// Return true if the person is a rescue dog leader.
+	bool IsRescueDogLeader() const;
+	// Return true if the person is a shooter.
+	bool IsShooter() const;
+	// Return true if the person is an engineer.
+	bool IsEngineer() const;
+	// Return true if the person is an ABC firefighter.
+	bool IsFireFighterABC() const;
+	// Return true if the person is a polar bear.
+	bool IsPolarBear() const;
+	// Mark the person as found by a dog.
+	void SetFoundByDog(bool Found_);
+	// Enable or disable shooting at psychologists.
+	void SetShootAtPsychologist(bool shoot_);
+	// Set shooting power.
+	void SetShootPower(float power_);
+	// Set shooting frequency.
+	void SetShootFrequency(float freq_);
+	// Set shooting range.
+	void SetShootRange(float range_);
+	// Set primary target object.
+	void SetPrimaryTarget(GameObject *target_);
+	// Enable or disable blood puddles.
+	void SetBloodPuddle(bool bleeding_);
+	// Move an object to the person's equipment location.
+	bool SetObjectToEquipmentLocation(GameObject &object_, bool personLocation_ = true);
+
+	// Get aim target ID.
+	int GetAimTargetID() const;
+	// Get entered house ID.
+	int GetEnteredHouseID() const;
+	// Set entered house ID.
+	bool SetEnteredHouseID(int houseID_);
+	// Get entered car ID.
+	int GetEnteredCarID() const;
+	// Get entered car target ID.
+	int GetEnteredCarTargetID() const;
+
+	// Get whether automatic resorting is disabled.
+	bool GetNeverResort() const;
+	// Enable or disable automatic resorting.
+	void SetNeverResort(bool neverdo_);
+	// Set fleeing state.
+	void SetFleeing(bool flee_, bool clearActions_=true);
+	// Return true if the person is resorting.
+	bool IsResorting() const;
+	// Push ignore-energy state on internal stack.
+	void PushIgnoreEnergy();
+	// Pop ignore-energy state from internal stack.
+	void PopIgnoreEnergy();
+	// Clear tracked received energies.
+	void ClearReceivedEnergies();
+
+	// Attach a model object to the right hand.
+	void PlaceObjectInRightHand(const char* modelPath_);
+	// Remove object In Right Hand and return success.
+	void RemoveObjectInRightHand();
+	// Stop movement.
+	void StopMovement();
+
+	// Set default message group.
+	void SetDefaultMessageGroup();
+	// Set active message group.
+	void SetMessageGroup(const char* MsgGroup_);
+	const char *GetMessageGroup() const;
+	// Return true if a message group is assigned.
+	bool HasMsgGroup() const;
+	// Return true if the person can be asked.
+	bool CanBeAsked() const;
+
+	// Get the throw position as a vector.
+	bool GetThrowPosition(Vector &Pos_) const;
+
+	// Get the throw position as coordinates.
+	bool GetThrowPosition(float &x_, float &y_, float &z_);
+
+	// Check ladder-cannon extinguish distance.
+	bool CheckDLKExtinguishDistance(const Actor *target_);
+	// Return true if the person can enter the house from a ladder truck.
+	bool CanEnterHouseFromDLK(const OpenHouse *target_);
+	// Return true if the person can use the ladder cannon.
+	bool CanUseDLKCannon();
+	// Return true if the person can stop using the ladder cannon.
+	bool CanStopUseDLKCannon();
+	// Return true if the person can leave the ladder truck.
+	bool CanLeaveDLK();
+	// Return true if the person is in the ladder basket.
+	bool IsInDLKBasket();
+	// Set the escape path.
+	void SetEscapePath(const char* pathname_);
+	// Set the standard path.
+	void SetStandardPath(const char* pathname_);
+
+	// Return true if the person can enter the decontamination point.
+	bool CanEnterDekonP();
+	// Get the entered house entrance position as a vector.
+	Vector GetEnteredHouseEntrancePosition(bool front_) const;
+
+	// Get the entered house entrance position as coordinates.
+	void GetEnteredHouseEntrancePosition(bool front_, float &x_, float &y_, float &z_) const;
+
+	// Return true if a squad member is within range.
+	bool IsSquadInRange(float radius) const;
+	// Return true if a police squad member is within range.
+	bool IsPoliceSquadInRange(float radius) const;
+	// Return true if a squad car is within range.
+	bool IsSquadCarInRange(float radius) const;
+	// Handle Ask Person interaction.
+	void OnAskPerson(Person *questioner_);
+
+	// Set lifetime for thrown stones.
+	void SetStoneThrowLifeDuration(float seconds_);
+	// Revive the person.
+	void Revive();
+	// Set civilian flee range.
+	void SetCivilsFleeRange(float range_);
+	// Toggle civilian fleeing behavior when gangsters are present.
+	void SetCivilsFleeing(bool flee_);
+
+	// Get person type.
+	PersonType GetPersonType() const;
+	// Enable or disable auto-targeting.
+	void EnableAutoTarget(bool enable_);
+	// Return true if auto-targeting is enabled.
+	bool IsAutoTargetEnabled() const;
+	// Set auto-heal distance.
+	void SetAutoHealDistance(float distance_);
+	// Get person gender category.
+	PersonGender GetGender() const;
+
+	// Return true if the target is in sight.
+	bool IsInSight(int TargetID_) const;
+	// Update carried state and carrier reference.
+	void Carried(bool carried_, bool hide_, GameObject *carrier_ = NULL);
+	// Set spread angle.
+	void SetSpreadAngle(float angle_);
+	// Set sight angle.
+	void SetSightAngle(float angle_);
+	// Return true if a car with the given prefix is in range.
+	bool IsCarWithPrefixInRange(float radius, const char* prefix, int &id);
+	// Return whether the gangster symbol is disabled.
+	bool GetDisableGangsterSymbol();
+	// Enable or disable the gangster symbol.
+	void SetDisableGangsterSymbol(bool disable_);
+	// Set dog perception range.
+	void SetDogPerceptionRange(float range_);
+	// Get dog perception range.
+	float GetDogPerceptionRange();
+	// Set the upgrade level.
+	void SetUpgradeLevel(int level_);
+	// Get the upgrade level.
+	int GetUpgradeLevel() const;
+	// Return true if the person is a victim.
+	bool IsVictim() const;
+};

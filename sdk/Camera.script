@@ -1,0 +1,122 @@
+﻿// Camera control API for movement, transitions, targeting, and camera lock constraints.
+namespace Camera
+{
+	
+	// Move the camera from Start_ to End_ over Duration_.
+	void Move(const Vector &Start_, const Vector &End_=NULLVECTOR, float Duration_ = 0.0f);
+	// Move the camera along a named path.
+	void Move(const char* pathname,const float duration = 0);
+
+	// Rotate the camera by delta angles.
+	void Rotate(float stepx = 0, float stepy = 0, float stepz = 0, float speed = 0);
+	// Set the camera position directly.
+	void Set(const Vector &Pos_);
+	// Return the current camera position.
+	Vector Get();
+		
+	// Set camera rotation directly.
+	void SetRotation(float x, float y, float z);
+	// Return current camera rotation.
+	void GetRotation(float &roll_, float &pitch_, float &yaw_);
+
+	// Set the target camera rotation.
+	void SetCameraRotationTo(const float x,const  float y,const  float z);
+
+	// Zoom the camera in.
+	void ZoomIn(const float ZoomIn);
+	// Zoom the camera out.
+	void ZoomOut(const float ZoomOut);
+	// Zoom the camera in to a target level.
+	void ZoomInTo(const float ZoomIn);
+	// Zoom the camera out to a target level.
+	void ZoomOutTo(const float ZoomOut);
+
+	// Restrict camera movement radius.
+	void Restrict(const float radius = 0);
+
+	// Follow a game object from an offset position.
+	void FollowTarget(const GameObject *object_, const Vector &Pos_, bool useCurrentCamPos_ = false);	
+	// Look at a game object with optional smooth transition and zoom.
+	void LookAtTarget(const GameObject *object_, bool smoothTransition_ = false,
+					  float zoomSpeed_ = 0.0f, float zoomDuration_ = 1.0f);	
+	// Look at a world position.
+	void LookAtPoint(const Vector &Point_, bool smoothTransition_, float zoomSpeed_, float zoomDuration_);
+	// Look from From_ toward To_.
+	void LookAt(const Vector &From_, const Vector &To_);
+	// Return current camera direction.
+	void GetDirection(float &x, float &y, float &z);
+	// Synchronize camera with physics state.
+	void SynchronizeWithPhysics();
+	// Synchronize camera with game state.
+	void SynchronizeWithGame();
+
+	// Return true if camera is moving.
+	const bool IsMoving  ();
+	// Return true if camera is rotating.
+	const bool IsRotating();
+	// Start a named camera transition.
+	void StartTransition(const char *Target_, float Duration_, bool stopSmooth_ = true, bool startSmooth_ = false);	
+	// Start a transition to a position and rotation.
+	void StartTransition(const Vector &pos_, float yaw_, float pitch_, float roll_, float duration_, bool stopSmooth_ = true, bool startSmooth_ = false);
+	// Start a transition with height and rotation.
+	void StartTransition(const Vector &Pos_, float height_, float yaw_, float pitch_, float roll_, float duration_, bool stopSmooth_ = true, bool startSmooth_ = false);
+	// Return stored transition parameters.
+	void GetTransition(const char *name_, Vector &pos_, float &yaw_, float &pitch_, float &roll_);
+	// Return true if the camera is transitioning.
+	bool IsCameraTransitioning();
+
+	// Move camera to a named location.
+	void SetCameraToLocation(const char *Target_);
+
+	// Lock camera movement.
+	void LockCameraMovement();
+	// Unlock camera movement.
+	void UnlockCameraMovement();
+	// Lock camera rotation.
+	void LockCameraRotation();
+	// Unlock camera rotation.
+	void UnlockCameraRotation();
+	// Lock camera zoom.
+	void LockCameraZoom();
+	// Unlock camera zoom.
+	void UnlockCameraZoom();
+
+	// Enable the entry point camera preset.
+	void EnableEntryPoint();
+	// Disable camera XY movement.
+	void DisableCameraXYMovement();
+	// Enable camera XY movement.
+	void EnableCameraXYMovement();
+	// Disable camera Z movement.
+	void DisableCameraZMovement();
+	// Enable camera Z movement.
+	void EnableCameraZMovement();
+	// Disable camera rotation.
+	void DisableCameraRotation();
+	// Enable camera rotation.
+	void EnableCameraRotation();
+
+	// Set minimum camera zoom distance.
+	void SetMinCamZ(float value_);
+	// Return minimum camera zoom distance.
+	float GetMinCamZ();
+	// Set maximum camera zoom distance.
+	void SetMaxCamZ(float value_);
+	// Return maximum camera zoom distance.
+	float GetMaxCamZ();
+
+	// Set minimum camera pitch.
+	void SetMinCamPitch(float value_);
+	// Return minimum camera pitch.
+	float GetMinCamPitch();
+	// Set maximum camera pitch.
+	void SetMaxCamPitch(float value_);
+	// Return maximum camera pitch.
+	float GetMaxCamPitch();
+
+	// Enable or disable camera shaking.
+	void SetShakingEnabled(bool enable_);
+	
+	// Start a camera shake effect.
+	void StartCamShake(float duration_, float strength_, bool localOnly_ = true);
+};

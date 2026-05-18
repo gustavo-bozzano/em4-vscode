@@ -1,0 +1,322 @@
+﻿// Vehicle role/type identifiers used by gameplay logic and command filters.
+enum VehicleType
+{
+	// Non-squad vehicle.
+	VT_NOSQUAD,
+	VT_THW_FGRR_BKF,		// Recovery crane.
+	VT_THW_FGRB_BLF,		// Bridge-layer vehicle.
+	VT_THW_FGRI_EKW,		// Engineer transport vehicle.
+	VT_FIREFIGHTERS_ASF,	// Tow truck (legacy, now THW in many mods).
+	VT_FIREFIGHTERS_DEKONP,	// Decontamination vehicle.
+	VT_FIREFIGHTERS_DLK,	// Turntable ladder vehicle.
+	VT_FIREFIGHTERS_RW,		// Technical rescue vehicle.
+	VT_FIREFIGHTERS_TLF,	// Tank fire engine.
+	VT_FIREFIGHTERS_LF,		// Firefighting aircraft.
+	VT_FIREFIGHTERS_FLB,	// Firefighting boat.
+	VT_FIREFIGHTERS_LPF,	// Firefighting tank vehicle.
+	VT_FIREFIGHTERS_FMB,	// Fire department motorboat.
+	VT_FIREFIGHTERS_TFMB,	// Transport vehicle for FMB.
+	VT_POLICE_SW,			// Special police vehicle.
+	VT_POLICE_MTW,			// Police troop carrier.
+	VT_POLICE_PHC,			// Police helicopter.
+	VT_POLICE_STW,			// Police patrol car.
+	VT_POLICE_WAW,			// Water cannon vehicle.
+	VT_POLICE_GETAWAY,		// Getaway vehicle in police possession.
+	VT_AMBULANCE_ITW,		// Intensive care transport vehicle.
+	VT_AMBULANCE_NEF,		// Emergency physician vehicle.
+	VT_AMBULANCE_RHC,		// Rescue helicopter.
+	VT_AMBULANCE_RHF,		// Rescue dog vehicle.
+	VT_AMBULANCE_RTW,		// Ambulance transport vehicle.
+	VT_TAXI,
+	VT_BUS,
+	VT_DRIVERCAR,
+	VT_GANGSTER_GETAWAY,	// Getaway vehicle in gangster possession.
+	VT_TV_HELI,
+	VT_THW_FGRR_RL = 100,	// Bulldozer.
+	VT_THW_FGRR_TRL = 101,	// Transport vehicle for RL.
+	VT_THW_FGRT_BH = 102,
+	VT_FIREFIGHTERS_GTF = 200,
+	VT_POLICE_GTW = 300,
+	VT_AMBULANCE_TRANSEVAC = 400,
+	VT_ALL_SQUAD_VEHICLES = 500, // Aggregate value for all squad vehicles.
+
+
+	VT_NUMTYPES = VT_TV_HELI + 7
+};
+
+// Door action channels used by vehicle door animations.
+enum DoorActionType
+{
+	DAT_NONE			= 0x00,
+	// Vehicle equipment compartment door.
+	DAT_EQUIPMENT		= 0x01,
+	// Vehicle passenger door.
+	DAT_PERSON			= 0x02,
+	// Vehicle special/utility door.
+	DAT_SPECIAL		= 0x03
+};
+
+// Vehicle actor API: transport, deployment, and tactical behaviors.
+class Vehicle : public GameObject
+{
+	// Create a Vehicle instance wrapper.
+	Vehicle();
+	// Create a Vehicle instance wrapper.
+	Vehicle(const Vehicle& Obj_);
+	// Create a Vehicle instance wrapper.
+	Vehicle(const Actor* Act_);
+	// Create a Vehicle instance wrapper.
+	Vehicle(const GameObject* Obj_);
+	// Release this Vehicle wrapper.
+	~Vehicle();
+	// Return true if the vehicle wrapper is valid.
+	virtual bool IsValid() const;
+
+	// Set current vehicle energy.
+	void SetEnergy(float energy_);
+	// Get current vehicle energy.
+	float GetEnergy() const;
+	// Get maximum vehicle energy.
+	float GetMaxEnergy() const;
+	// Return true if the vehicle is destroyed.
+	bool IsDestroyed() const;
+	// Return true if the vehicle is smoking.
+	bool IsSmoking() const;
+
+	// Destroy the vehicle similar to an explosion but without force and particle effects.
+	void Destroy();
+	// Toggle smoking state; smoking vehicles lose energy and may eventually explode.
+	void SetSmoking(bool smoking_);
+	// Set smoke level duration.
+	void SetSmokeLevelDuration(float smokeLevelDuration_);
+	// Get smoke level duration.
+	float GetSmokeLevelDuration();
+
+	// Get number of passengers.
+	int GetNumPassengers() const;
+	// Get passenger list.
+	PersonList GetPassengers() const;
+	// Add passenger and return success.
+	bool AddPassenger(Person &Passenger_);
+	// Remove passenger and return success.
+	bool RemovePassenger(Person &Passenger_);
+	// Get number of free passenger slots.
+	int GetFreePassengers() const;
+	// Set maximum passengers.
+	void SetMaxPassengers(int max_, bool discard_ = false);
+
+	// Return true if the vehicle is installed.
+	bool IsInstalled();
+	// Return true if the ladder/bucket is uplifted.
+	bool IsUplifted();
+	// Return true if uplifting is in progress.
+	bool IsUplifting();
+	// Return true if the basket is empty.
+	bool IsBasketEmpty();
+	// Return true if the cannon is in use.
+	bool IsCannonInUse();
+	// Return true if the FGRB compartment is empty.
+	bool IsFGRBEmpty();
+	// Return true if the bucket is moving.
+	bool IsBucketMoving();
+	// Return true if the bucket is up.
+	bool IsBucketUp();
+	// Get install target ID.
+	int GetInstallTargetID() const;
+	// Return true if a boat is loaded.
+	bool HasBoatUploaded();
+	// Return true if a vehicle is loaded.
+	bool HasVehicleUploaded();
+	// Return true if the vehicle is parking.
+	bool IsParking() const;
+	// Return true if the vehicle is decontaminating.
+	bool IsDecontaminating() const;
+
+	// Set parking state.
+	void SetParking(bool parking_);
+
+	// Get number of transported persons.
+	int GetNumTransported() const;
+	// Get transported persons.
+	PersonList GetTransports() const;
+	// Add transport and return success.
+	bool AddTransport(Person &Transported_);
+	// Remove transport and return success.
+	bool RemoveTransport(Person &Transported_);
+	// Get number of free transport slots.
+	int GetFreeTransports() const;
+	// Set maximum transported persons.
+	void SetMaxTransports(int max_, bool discard_ = false);
+	// Get vehicle type.
+	const VehicleType GetVehicleType()const;
+	// Override vehicle role/type at runtime.
+	void SetVehicleRole(VehicleType type_);
+
+	// Check whether unloading is possible at a vector position.
+	bool CheckUnloadPossible(GameObject *obj_, const Vector &V_) const;
+
+	// Check whether unloading is possible at coordinates.
+	bool CheckUnloadPossible(GameObject *obj_, float _x, float _y, float _z);
+
+	// Return true if an enclosed person is present.
+	bool HasEnclosedPerson() const;
+	// Set enclosed person model name.
+	bool SetEnclosedPerson(const char* name);
+	// Remove enclosed Person and return success.
+	bool RemoveEnclosedPerson();
+
+	// Get a valid landing angle near the target.
+	float GetValidLandingAngle(GameObject *target_, const Vector &Pos_) const;
+
+	// Return landing-position validation score.
+	float IsValidLandingPosition(GameObject *target_, float x_, float y_, float z_) const;
+
+	// Return true if the rope drop position is valid.
+	bool IsValidRopeDropPosition(GameObject *target_, const Vector &Pos_) const;
+
+	// Return true if the engineer drop position is valid.
+	bool IsValidEngineerDropPosition(GameObject *target_, const Vector &Pos_) const;
+
+	// Return true if the rope drop position is valid.
+	bool IsValidRopeDropPosition(GameObject *target_, float x_, float y_, float z_) const;
+
+	// Find a reachable position as a vector.
+	bool FindReachablePosition(GameObject* obj_, Vector &Pos_) const;
+
+	// Find a reachable position as coordinates.
+	bool FindReachablePosition(GameObject* obj_, float &tx_, float &ty_, float &tz_);
+
+	// Return true if the vehicle can be dropped at a vector position.
+	bool CanBeDropped(const Vector &Pos_) const;
+
+	// Return true if the vehicle can be dropped at coordinates.
+	bool CanBeDropped(float x_, float y_, float z_);
+
+	// Return true if the vehicle can be dropped on an object.
+	bool CanBeDropped(GameObject* obj_);
+
+	// Return true if the vehicle can be taken by an object.
+	bool CanBeTaken(GameObject* obj_);
+
+	// Find a landing stage and return its index.
+	int FindLandingStage(bool tfmb_, Vector &Pos_, float distFactor) const;
+
+	// Find a landing stage and return its index with coordinate output.
+	int FindLandingStage(bool tfmb_, float &x_,float &y_, float &z_, float distFactor);
+
+	// Find landing stage for FMB mode with vector output.
+	bool FindLandingStageFMB(Vector &Pos_, float distFactor) const;
+
+	// Find landing stage for FMB mode with coordinate output.
+	bool FindLandingStageFMB(float &x_,float &y_, float &z_, float distFactor);
+
+	// Return current landing stage index with vector output.
+	int IsInLandingStage(bool tfmb_, Vector &Pos_, float distFactor) const;
+
+	// Return current landing stage index with coordinate output.
+	int IsInLandingStage(bool tfmb_, float &x_,float &y_, float &z_, float distFactor);
+
+	// Return true if the vehicle is ready.
+	bool IsReady() const;
+	// Return true if the vehicle is on the ground.
+	bool IsOnGround() const;
+	// Return true if searchlight is on.
+	bool IsSearchlightOn() const;
+	// Return true if light is on.
+	bool IsLightOn() const;
+	// Return true if transport is on stretcher.
+	bool HasTransportOnStretcher() const;
+	// Return true if engineer is on board.
+	bool HasEngineerOnBoard() const;
+	// Get follow target.
+	GameObject GetFollowTarget() const;
+
+	// Get bridge install point as a vector.
+	int GetBridgeInstallPoint(Vector &Pos_) const;
+
+	// Get bridge install point as coordinates.
+	int GetBridgeInstallPoint(float &x_, float &y_, float &z_);
+
+	// Check whether extinguisher distance constraints are met.
+	bool CheckExtinguishDistance(const GameObject &Object_);
+
+	const char *GetStandardPath();
+	// Enable auto Target.
+	void EnableAutoTarget(bool enable_);
+	// Set user-data value to ignore.
+	void SetIgnoreUserData(int data_);
+
+	// Return whether the vehicle was stopped by a roadblock.
+	bool WasStoppedByRoadblock() const;
+	// Return true if drive-by shooting is active.
+	bool IsDriveByShooting() const;
+	// Add rifle To Getaway Car and return success.
+	bool AddRifleToGetawayCar();
+	// Fire from the getaway car at a target.
+	void ShootOutOfGetawayCar(GameObject *target_, float damage_);
+	// Enable or disable auto shooting.
+	bool SetAutoShoot(bool enable_);
+	// Return whether auto shooting is enabled.
+	bool GetAutoShoot() const;
+
+	// Get associated fire object.
+	FireObject GetFireObject();
+
+	// Play open-door animation by door action type.
+	void PlayAnimOpenDoor(DoorActionType doorType_, float time_, GameObject *Caller_=NULL);
+	// Play close-door animation by door action type.
+	void PlayAnimCloseDoor(DoorActionType doorType_, float time_, GameObject *Caller_=NULL);
+
+	// Return true if a connector is free.
+	bool IsConnectorFree() const;
+	// Get used connector position.
+	bool GetUsedConnectorPosition(GameObject *Caller_, Vector &Pos_);
+	// Return true if caller is using a connector.
+	bool IsUsingConnector(GameObject *Caller_);
+	// Return true if transport evac can be unloaded.
+	bool CanUnloadTransEvac() const;
+	// Add squad and return success.
+	bool AddSquad(Person *person_);
+
+	// Return true if vehicle is a firefighter unit.
+	bool IsFirefighter() const;
+	// Return true if vehicle is an ambulance.
+	bool IsAmbulance() const;
+	// Return true if vehicle is a THW unit.
+	bool IsThw() const;
+	// Return true if vehicle is a police unit.
+	bool IsPolice() const;
+	// Return true if vehicle is a civilian car.
+	bool IsCivilCar() const;
+	// Apply damage to the vehicle.
+	void Damage(float amount_);
+
+	// Add train Waggon and return success.
+	bool AddTrainWaggon(GameObject *waggon_);
+
+	// Get helicopter sound reference.
+	int GetHeliSound();
+	// Set siren audio file.
+	void SetSirenFile(const char * sirenFile_);
+
+	// Set maximum vehicle energy.
+	void SetMaxEnergy(float energy_);
+	// Play open-door animation by child name.
+	void PlayAnimOpenDoor(const char *name_, float time_, GameObject *Caller_=NULL);
+	// Play close-door animation by child name.
+	void PlayAnimCloseDoor(const char *name_, float time_, GameObject *Caller_=NULL);
+	// Get number of used connectors.
+	int GetNumUsedConnectors() const;
+	// Remove train Waggon and return success.
+	bool RemoveTrainWaggon(GameObject *waggon_);
+	// Get number of train wagons.
+	int GetNumTrainWaggons();
+	// Set water stream start width.
+	void SetWaterStreamStartWidth(float width_);
+	// Get water stream start width.
+	float GetWaterStreamStartWidth() const;
+	// Set water stream end width.
+	void SetWaterStreamEndWidth(float width_);
+	// Get water stream end width.
+	float GetWaterStreamEndWidth() const;
+};
