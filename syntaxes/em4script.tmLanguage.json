@@ -109,30 +109,53 @@
     "variables": {
       "patterns": [
         {
+          "name": "meta.variable.constant.em4script",
+          "match": "\\b([A-Z][A-Z0-9_]{2,})\\b",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
           "name": "variable.language.em4script",
           "match": "\\b(this|super)\\b"
         },
         {
           "name": "meta.variable.declaration.builtin-type.em4script",
-          "match": "\\b(const\\s+)?(void|bool|int|float|char|unsigned|signed|string)\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=(?:=|;|,|\\)|\\]))",
+          "match": "\\b(const\\s+)?(void|bool|int|float|char|unsigned|signed|string)\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\[\\s*([A-Za-z_][A-Za-z0-9_]*)?\\s*\\])?\\s*(?=(?:=|;|,|\\)|\\]))",
           "captures": {
             "1": { "name": "storage.modifier.em4script" },
             "2": { "name": "storage.type.em4script" },
-            "3": { "name": "variable.other.readwrite.em4script" }
+            "3": { "name": "variable.other.readwrite.em4script" },
+            "4": { "name": "variable.other.readwrite.em4script" }
           }
         },
         {
           "name": "meta.variable.declaration.custom-type.em4script",
-          "match": "\\b(const\\s+)?([A-Z][A-Za-z0-9_]*)\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)\\s*(?=(?:=|;|,|\\)|\\]))",
+          "match": "\\b(const\\s+)?([A-Z][A-Za-z0-9_]*)\\s+(?:[*&]\\s*)?([A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\[\\s*([A-Za-z_][A-Za-z0-9_]*)?\\s*\\])?\\s*(?=(?:=|;|,|\\)|\\]))",
           "captures": {
             "1": { "name": "storage.modifier.em4script" },
             "2": { "name": "entity.name.type.class.em4script" },
-            "3": { "name": "variable.other.readwrite.em4script" }
+            "3": { "name": "variable.other.readwrite.em4script" },
+            "4": { "name": "variable.other.readwrite.em4script" }
           }
         },
         {
           "name": "meta.variable.assignment.em4script",
           "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|\\+=|-=|\\*=|/=|%=|<<=|>>=|&=|\\|=|\\^=))",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
+          "name": "meta.variable.declarator.em4script",
+          "match": ",\\s*([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
+          "name": "meta.variable.array.size.em4script",
+          "match": "\\[\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\]",
           "captures": {
             "1": { "name": "variable.other.readwrite.em4script" }
           }
@@ -160,6 +183,13 @@
         {
           "name": "entity.name.type.class.em4script",
           "match": "\\b([A-Z][A-Za-z0-9_]*)\\b(?=\\s+(?:[*&]\\s*)?[A-Za-z_][A-Za-z0-9_]*\\s*(?:[=;,)\\[]))",
+          "captures": {
+            "1": { "name": "entity.name.type.class.em4script" }
+          }
+        },
+        {
+          "name": "entity.name.type.class.em4script",
+          "match": "\\b([A-Z][A-Za-z0-9_]*)\\b(?=\\s+(?:[*&]\\s*)?[A-Za-z_][A-Za-z0-9_]*\\s*\\()",
           "captures": {
             "1": { "name": "entity.name.type.class.em4script" }
           }
