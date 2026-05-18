@@ -21,7 +21,7 @@ const documents = new TextDocuments(TextDocument);
 const SCRIPT_SOURCE = "em4-script"
 
 const KEYWORDS = [
-  'namespace', 'class', 'enum', 'struct', 'object', 'const',
+  'namespace', 'class', 'enum', 'struct', 'union', 'object', 'const',
   'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default',
   'return', 'break', 'continue', 'true', 'false', 'new', 'delete',
   'virtual', 'static', 'void', 'bool', 'int', 'float', 'char'
@@ -262,7 +262,7 @@ function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwne
   if (!text || text.includes('(')) return;
   if (/^(public|private|protected)\s*:/.test(text)) return;
 
-  const memberDecl = text.match(/^(?:(?:static|const)\s+)*(?:(?:class|struct|object)\s+)?([A-Za-z_][A-Za-z0-9_:<>]*)\s+(.+?)\s*;?$/);
+  const memberDecl = text.match(/^(?:(?:static|const)\s+)*(?:(?:class|struct|union|object)\s+)?([A-Za-z_][A-Za-z0-9_:<>]*)\s+(.+?)\s*;?$/);
   if (!memberDecl) return;
 
   const typeName = memberDecl[1];
@@ -282,7 +282,7 @@ function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwne
 
 function parseBaseTypes(baseClause) {
   if (!baseClause) return [];
-  const deny = new Set(['public', 'private', 'protected', 'virtual', 'class', 'struct', 'object']);
+  const deny = new Set(['public', 'private', 'protected', 'virtual', 'class', 'struct', 'union', 'object']);
   const result = [];
   const parts = baseClause.split(',');
   for (const part of parts) {
@@ -508,7 +508,7 @@ function parseDocument(text, uri) {
   let pendingMultiLineDecl = null;
 
   const namespacePattern = /^\s*namespace\s+([A-Za-z_][A-Za-z0-9_]*)/;
-  const classLikePattern = /^\s*(class|struct|object)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*([^/{]+))?/;
+  const classLikePattern = /^\s*(class|struct|union|object)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?::\s*([^/{]+))?/;
   const enumPattern = /^\s*enum\s+([A-Za-z_][A-Za-z0-9_]*)/;
   const constPattern = /^\s*const\s+[A-Za-z_][A-Za-z0-9_\s\*]*\s+([A-Za-z_][A-Za-z0-9_]*)\s*(\[\])?\s*=/;
   let pendingFunction = null;

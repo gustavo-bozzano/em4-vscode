@@ -75,7 +75,7 @@
       "patterns": [
         {
           "name": "meta.declaration.type.em4script",
-          "match": "\\b(namespace|class|struct|enum|object)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "match": "\\b(namespace|class|struct|union|enum|object)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
           "captures": {
             "1": { "name": "storage.type.declaration.em4script" },
             "2": { "name": "entity.name.type.em4script" }
