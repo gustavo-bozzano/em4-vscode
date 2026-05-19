@@ -28,7 +28,10 @@ VSCode extension for Emergency 4 / Los Angeles Mod `.script` files.
 
 ## Notes
 
-- The extension ships with a bundled SDK (`vscode-em4-lsp/sdk`) for hover/definition/completion/validation out of the box.
 - If a workspace-level `EM4 sdk` folder exists, it is also loaded.
 - SDK hover/completion documentation is read from contiguous `//` comments or block comments (`/* ... */`) placed directly above declarations.
 - Keep SDK comments in English and close to the related symbol (`enum`, `class`, method, function, constant) so the LSP can attach the text reliably.
+- 
+## License
+
+This project is licensed under the GNU GPL v3.

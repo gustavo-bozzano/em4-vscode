@@ -9,7 +9,7 @@
   },
   "publisher": "Gustavo Bozzano",
   "icon": "./icons/em4-vscode-icon.png",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "engines": {
     "vscode": "^1.90.0"
   },
