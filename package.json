@@ -1,9 +1,14 @@
 {
   "name": "em4-script",
   "displayName": "EM4 Script",
-  "description": "Language support for Emergency 4 script",
-  "version": "0.1.0",
-  "publisher": "local",
+  "description": "Language support for Emergency 4 .script",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/gustavo-bozzano/em4-vscode",
+    "type": "git"
+  },
+  "publisher": "Gustavo Bozzano",
+  "icon": "./icons/em4-vscode-icon.png",
   "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
@@ -17,9 +22,6 @@
     "lsp",
     "script",
     "911 first responders"
-  ],
-  "activationEvents": [
-    "onLanguage:em4script"
   ],
   "main": "./client/extension.js",
   "contributes": {
