@@ -8,9 +8,9 @@
     { "include": "#declarations" },
     { "include": "#keywords" },
     { "include": "#variables" },
+    { "include": "#enums" },
     { "include": "#literals" },
     { "include": "#types" },
-    { "include": "#enums" },
     { "include": "#functions" },
     { "include": "#members" },
     { "include": "#operators" },
@@ -147,6 +147,13 @@
           }
         },
         {
+          "name": "meta.variable.assignment.array.em4script",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*\\[[^\\]]*\\]\\s*(?:=|\\+=|-=|\\*=|/=|%=|<<=|>>=|&=|\\|=|\\^=))",
+          "captures": {
+            "1": { "name": "variable.other.readwrite.em4script" }
+          }
+        },
+        {
           "name": "meta.variable.declarator.em4script",
           "match": ",\\s*([A-Za-z_][A-Za-z0-9_]*)\\b",
           "captures": {
@@ -208,11 +215,11 @@
       "patterns": [
         {
           "name": "meta.enum.member.access.em4script",
-          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(::)([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(::)([A-Za-z_][A-Za-z0-9_]*)(?!\\s*\\()\\b",
           "captures": {
             "1": { "name": "entity.name.type.enum.em4script" },
             "2": { "name": "punctuation.accessor.em4script" },
-            "3": { "name": "constant.other.enum.em4script" }
+            "3": { "name": "variable.other.readwrite.em4script" }
           }
         },
         {
@@ -220,12 +227,17 @@
           "begin": "\\benum\\b(?:\\s+([A-Za-z_][A-Za-z0-9_]*))?",
           "end": "\\}",
           "beginCaptures": {
+            "0": { "name": "storage.type.em4script" },
             "1": { "name": "entity.name.type.enum.em4script" }
           },
           "patterns": [
             {
-              "name": "constant.other.enum.em4script",
-              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}))"
+              "name": "variable.other.readwrite.em4script",
+              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}|;))"
+            },
+            {
+              "name": "variable.other.readwrite.em4script",
+              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}|;))"
             }
           ]
         }
@@ -233,6 +245,23 @@
     },
     "functions": {
       "patterns": [
+        {
+          "name": "meta.function.call.qualified.em4script",
+          "match": "\\b([A-Z][A-Za-z0-9_]*)\\s*(::)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.type.class.em4script" },
+            "2": { "name": "punctuation.accessor.em4script" },
+            "3": { "name": "entity.name.function.em4script" }
+          }
+        },
+        {
+          "name": "meta.function.call.member.em4script",
+          "match": "(->|\\.|::)\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "punctuation.accessor.em4script" },
+            "2": { "name": "entity.name.function.em4script" }
+          }
+        },
         {
           "name": "meta.function.definition.em4script",
           "begin": "^\\s*(?=(?:virtual\\s+|static\\s+)?(?:[A-Za-z_][A-Za-z0-9_:\\*\\&<>]*\\s+)+~?[A-Za-z_][A-Za-z0-9_]*\\s*\\()",
