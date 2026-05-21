@@ -1,6 +1,6 @@
 # EM4 Script LSP (VSCode)
 
-VSCode extension for Emergency 4 / Los Angeles Mod `.script` files.
+VSCode extension for Emergency 4`.script` files.
 
 ## Features
 
