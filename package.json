@@ -7,7 +7,7 @@
     "url": "https://github.com/gustavo-bozzano/em4-vscode",
     "type": "git"
   },
-  "publisher": "gustavo-bozzano",
+  "publisher": "GustavoBozzano",
   "icon": "./icons/em4-vscode-icon.png",
   "license": "GPL-3.0",
   "engines": {
