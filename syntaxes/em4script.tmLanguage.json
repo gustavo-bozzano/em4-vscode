@@ -202,22 +202,32 @@
       "patterns": [
         {
           "name": "meta.variable.declaration.builtin.em4script",
-          "match": "\\b((?:const\\s+)?(?:void|bool|int|float|double|char|string|signed|unsigned)(?:\\s+(?:long|short|int|char))*)\\s*([*&]?)\\s*([A-Za-z_][A-Za-z0-9_]*)",
-          "captures": {
+          "begin": "\\b((?:const\\s+)?(?:void|bool|int|float|double|char|string|signed|unsigned)(?:\\s+(?:long|short|int|char))*)\\s*([*&]?)\\s*([A-Za-z_][A-Za-z0-9_]*)",
+          "beginCaptures": {
             "1": { "name": "storage.type.em4script" },
             "2": { "name": "keyword.operator.pointer.em4script" },
             "3": { "name": "variable.other.declaration.em4script" }
-          }
+          },
+          "end": "(?==|\\(|;|$)",
+          "applyEndPatternLast": 1,
+          "patterns": [
+            { "include": "#declarationContents" }
+          ]
         },
         {
           "name": "meta.variable.declaration.custom.em4script",
-          "match": "\\b(const\\s+)?([A-Z][A-Za-z0-9_:<>]*)\\s*([*&]?)\\s+([A-Za-z_][A-Za-z0-9_]*)",
-          "captures": {
+          "begin": "\\b(const\\s+)?([A-Z][A-Za-z0-9_:<>]*)\\s*([*&]?)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "beginCaptures": {
             "1": { "name": "storage.modifier.em4script" },
             "2": { "name": "entity.name.type.class.em4script" },
             "3": { "name": "keyword.operator.pointer.em4script" },
             "4": { "name": "variable.other.declaration.em4script" }
-          }
+          },
+          "end": "(?==|\\(|;|$)",
+          "applyEndPatternLast": 1,
+          "patterns": [
+            { "include": "#declarationContents" }
+          ]
         },
         {
           "name": "meta.variable.assignment.em4script",
@@ -233,6 +243,20 @@
             "2": { "name": "variable.other.member.em4script" }
           }
         }
+      ]
+    },
+    "declarationContents": {
+      "patterns": [
+        {
+          "name": "meta.variable.declaration.additional.em4script",
+          "match": ",\\s*([*&]?)\\s*([A-Za-z_][A-Za-z0-9_]*)(?=\\s*(?:\\[[^\\]]*\\]\\s*)?(?:,|;|=|\\())",
+          "captures": {
+            "1": { "name": "keyword.operator.pointer.em4script" },
+            "2": { "name": "variable.other.declaration.em4script" }
+          }
+        },
+        { "include": "#comments" },
+        { "include": "#punctuation" }
       ]
     },
     "keywords": {

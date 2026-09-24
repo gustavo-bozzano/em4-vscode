@@ -102,3 +102,17 @@ test('representative EM4 constructs have dedicated scopes', () => {
     assert.match(source, new RegExp(pattern.match), `${patternName} did not match: ${source}`);
   }
 });
+
+test('inline declarations highlight every variable after a comma', () => {
+  const builtin = findPattern('variables', 'meta.variable.declaration.builtin.em4script');
+  const additional = findPattern('declarationContents', 'meta.variable.declaration.additional.em4script');
+  const source = 'bool mStartCutScene, mBusExtinguished, mExplosion, mTooManyVictims;';
+
+  const firstMatch = new RegExp(builtin.begin).exec(source);
+  assert.ok(firstMatch, 'Expected the builtin declaration to start a declaration context');
+  assert.equal(firstMatch[3], 'mStartCutScene');
+
+  const additionalPattern = new RegExp(additional.match, 'g');
+  const names = [...source.matchAll(additionalPattern)].map((match) => match[2]);
+  assert.deepEqual(names, ['mBusExtinguished', 'mExplosion', 'mTooManyVictims']);
+});
