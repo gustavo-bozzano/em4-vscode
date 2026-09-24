@@ -6,6 +6,8 @@ VSCode extension for Emergency 4 `.script` files.
 
 - `em4script` language recognition for `.script` files
 - Improved syntax highlighting
+  - resilient recovery after incomplete strings and enum declarations
+  - dedicated colors for types, declarations, functions, members, constants, numbers, operators and preprocessor directives
 - LSP support with:
   - Global autocomplete (keywords, local symbols, and SDK symbols)
   - **Type-aware contextual autocomplete** for `->`, `.` and `::` (e.g., `Vehicle` vs `Person` methods)
