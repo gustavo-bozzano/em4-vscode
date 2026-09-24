@@ -175,3 +175,45 @@ test('rename is document-wide for global variables (no scope filtering)', () => 
   assert.ok(lines.includes(6), 'Expected match inside function body');
   assert.equal(occurrences.length, 3, 'Expected 3 occurrences of globalCounter');
 });
+
+test('rename only accepts valid non-reserved identifiers', () => {
+  const { isValidRenameIdentifier } = loadServerInternals();
+
+  assert.equal(isValidRenameIdentifier('newCounter_2'), true);
+  assert.equal(isValidRenameIdentifier('2counter'), false);
+  assert.equal(isValidRenameIdentifier('two words'), false);
+  assert.equal(isValidRenameIdentifier('while'), false);
+});
+
+test('rename rejects tokens inside comments and string literals', () => {
+  const { isTokenInCode } = loadServerInternals();
+  const source = [
+    '// counter',
+    'const char NAME[] = "counter";',
+    'int counter = 0;'
+  ].join('\n');
+  const document = { getText: () => source };
+  const token = { token: 'counter', start: 3, end: 10 };
+
+  assert.equal(isTokenInCode(document, { line: 0 }, token), false);
+  assert.equal(isTokenInCode(document, { line: 1 }, { token: 'counter', start: 21, end: 28 }), false);
+  assert.equal(isTokenInCode(document, { line: 2 }, { token: 'counter', start: 4, end: 11 }), true);
+});
+
+test('rename only targets symbols declared in the current document', () => {
+  const { parseDocument, getRenameScope } = loadServerInternals();
+  const source = [
+    'object TestRenameTarget : CommandScript',
+    '{',
+    '  void Foo()',
+    '  {',
+    '    int counter = 0;',
+    '    SetIcon("icon");',
+    '  }',
+    '};'
+  ].join('\n');
+  const localIndex = parseDocument(source, 'file:///tmp/TestRenameTarget.script');
+
+  assert.equal(getRenameScope(localIndex, 'counter', { line: 4, character: 8 }).renameable, true);
+  assert.equal(getRenameScope(localIndex, 'SetIcon', { line: 5, character: 8 }).renameable, false);
+});

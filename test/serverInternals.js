@@ -12,7 +12,11 @@ const TEST_EXPORTS = [
   'buildCompletionItems',
   'resolveDefinitionAtPosition',
   'formatScriptText',
-  'findAllOccurrencesInDocument'
+  'findAllOccurrencesInDocument',
+  'isValidRenameIdentifier',
+  'isTokenInCode',
+  'getRenameScope',
+  'resolveWorkspaceFolders'
 ];
 
 function loadServerInternals() {
@@ -35,6 +39,8 @@ function loadServerInternals() {
     onDocumentFormatting: () => { },
     onPrepareRename: () => { },
     onRenameRequest: () => { },
+    onDidChangeWatchedFiles: () => { },
+    workspace: { onDidChangeWorkspaceFolders: () => { } },
     listen: () => { }
   };
 

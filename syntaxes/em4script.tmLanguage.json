@@ -42,6 +42,14 @@
           "patterns": [
             { "name": "constant.character.escape.em4script", "match": "\\\\." }
           ]
+        },
+        {
+          "name": "string.quoted.single.em4script",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            { "name": "constant.character.escape.em4script", "match": "\\\\." }
+          ]
         }
       ]
     },
@@ -247,10 +255,6 @@
             "1": { "name": "entity.name.type.enum.em4script" }
           },
           "patterns": [
-            {
-              "name": "variable.other.readwrite.em4script",
-              "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}|;))"
-            },
             {
               "name": "variable.other.readwrite.em4script",
               "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*(?:=|,|\\}|;))"

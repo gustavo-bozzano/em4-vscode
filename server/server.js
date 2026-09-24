@@ -18,7 +18,7 @@ const { TextDocument } = require('vscode-languageserver-textdocument');
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 
-const SCRIPT_SOURCE = "em4-script"
+const SCRIPT_SOURCE = 'em4-script';
 
 const KEYWORDS = [
   'namespace', 'class', 'enum', 'struct', 'union', 'object', 'const',
@@ -41,6 +41,7 @@ const sdkKnownTypes = new Set([...BUILTIN_TYPES]);
 const PRIMITIVE_ASSIGNMENT_TYPES = new Set(['bool', 'int', 'float', 'char', 'string']);
 
 const documentIndexes = new Map();
+let workspaceFolders = [];
 
 function uriToPath(uri) {
   try {
@@ -55,9 +56,30 @@ function pathToUri(filePath) {
   return pathToFileURL(filePath).toString();
 }
 
+function resolveWorkspaceFolders(params) {
+  if (params && Array.isArray(params.workspaceFolders)) {
+    return params.workspaceFolders.filter((folder) => folder && folder.uri);
+  }
+  if (params && params.rootUri) {
+    return [{ uri: params.rootUri, name: path.basename(uriToPath(params.rootUri) || params.rootUri) }];
+  }
+  if (params && params.rootPath) {
+    return [{ uri: pathToUri(params.rootPath), name: path.basename(params.rootPath) }];
+  }
+  return [];
+}
+
+function refreshSdkAndOpenDocuments() {
+  loadSdk(workspaceFolders);
+  for (const document of documents.all()) {
+    indexDocument(document);
+    validateTextDocument(document);
+  }
+}
+
 function wordAt(document, position) {
   const text = document.getText();
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\n|\r/);
   const line = lines[position.line] || '';
   const left = line.slice(0, position.character);
   const right = line.slice(position.character);
@@ -69,7 +91,7 @@ function wordAt(document, position) {
 }
 
 function wordRangeAt(document, position) {
-  const lines = document.getText().split(/\r?\n/);
+  const lines = document.getText().split(/\r\n|\n|\r/);
   const line = lines[position.line] || '';
   const left = line.slice(0, position.character);
   const right = line.slice(position.character);
@@ -321,9 +343,10 @@ function sanitizeLineStateful(line, state, options) {
       if (ch === '\\' && next) {
         out += maskStrings ? '  ' : `${ch}${next}`;
         i += 1;
-      } else if (ch === '"') {
-        out += '"';
+      } else if (ch === state.stringQuote) {
+        out += state.stringQuote;
         state.inString = false;
+        state.stringQuote = null;
       } else {
         out += maskStrings ? ' ' : ch;
       }
@@ -344,9 +367,10 @@ function sanitizeLineStateful(line, state, options) {
       continue;
     }
 
-    if (ch === '"') {
-      out += '"';
+    if (ch === '"' || ch === "'") {
+      out += ch;
       state.inString = true;
+      state.stringQuote = ch;
       continue;
     }
 
@@ -354,18 +378,20 @@ function sanitizeLineStateful(line, state, options) {
   }
 
   state.inLineComment = false;
+  state.inString = false;
+  state.stringQuote = null;
   return out;
 }
 
 function sanitizeLinesForAnalysis(text) {
-  const lines = text.split(/\r?\n/);
-  const state = { inLineComment: false, inBlockComment: false, inString: false };
+  const lines = text.split(/\r\n|\n|\r/);
+  const state = { inLineComment: false, inBlockComment: false, inString: false, stringQuote: null };
   return lines.map((line) => sanitizeLineStateful(line, state));
 }
 
 function sanitizeLinesForValidation(text) {
-  const lines = text.split(/\r?\n/);
-  const state = { inLineComment: false, inBlockComment: false, inString: false };
+  const lines = text.split(/\r\n|\n|\r/);
+  const state = { inLineComment: false, inBlockComment: false, inString: false, stringQuote: null };
   return lines.map((line) => sanitizeLineStateful(line, state, { preserveStringContent: true }));
 }
 
@@ -416,7 +442,7 @@ function introducesSingleStatementIndent(sanitizedTrimmedLine) {
 }
 
 function formatScriptText(text, options) {
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\n|\r/);
   const sanitizedLines = sanitizeLinesForAnalysis(text);
   const useSpaces = options ? options.insertSpaces !== false : true;
   const tabSize = options && Number.isInteger(options.tabSize) && options.tabSize > 0 ? options.tabSize : 2;
@@ -484,7 +510,7 @@ function formatScriptText(text, options) {
 }
 
 function parseDocument(text, uri) {
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\n|\r/);
   const sanitizedLines = sanitizeLinesForAnalysis(text);
   const definitions = new Map();
   const symbols = [];
@@ -1127,7 +1153,7 @@ function resolveDefinitionAtPosition(document, localIndex, position) {
 }
 
 function getContextAtPosition(document, position) {
-  const lines = document.getText().split(/\r?\n/);
+  const lines = document.getText().split(/\r\n|\n|\r/);
   const line = lines[position.line] || '';
   const before = line.slice(0, position.character);
   const after = line.slice(position.character);
@@ -1158,7 +1184,7 @@ function getContextAtPosition(document, position) {
 }
 
 function getCallContextAtPosition(document, position) {
-  const lines = document.getText().split(/\r?\n/);
+  const lines = document.getText().split(/\r\n|\n|\r/);
   const line = lines[position.line] || '';
   const before = line.slice(0, position.character);
   const stack = [];
@@ -1479,6 +1505,7 @@ function splitTopLevelStatements(lineText) {
   let bracketDepth = 0;
   let braceDepth = 0;
   let inString = false;
+  let stringQuote = null;
 
   for (let i = 0; i < lineText.length; i += 1) {
     const ch = lineText[i];
@@ -1486,13 +1513,15 @@ function splitTopLevelStatements(lineText) {
     if (inString) {
       if (ch === '\\') {
         i += 1;
-      } else if (ch === '"') {
+      } else if (ch === stringQuote) {
         inString = false;
+        stringQuote = null;
       }
       continue;
     }
-    if (ch === '"') {
+    if (ch === '"' || ch === "'") {
       inString = true;
+      stringQuote = ch;
       continue;
     }
     if (ch === '(') parenDepth += 1;
@@ -1597,19 +1626,22 @@ function getLineExpressionDepths(lines) {
     const startParenDepth = parenDepth;
     const startBracketDepth = bracketDepth;
     let inString = false;
+    let stringQuote = null;
 
     for (let i = 0; i < line.length; i += 1) {
       const ch = line[i];
       if (inString) {
         if (ch === '\\') {
           i += 1;
-        } else if (ch === '"') {
+        } else if (ch === stringQuote) {
           inString = false;
+          stringQuote = null;
         }
         continue;
       }
-      if (ch === '"') {
+      if (ch === '"' || ch === "'") {
         inString = true;
+        stringQuote = ch;
         continue;
       }
       if (ch === '(') parenDepth += 1;
@@ -1814,6 +1846,47 @@ function findAllOccurrencesInDocument(document, token, localIndex, scopeId) {
   return locations;
 }
 
+function isValidRenameIdentifier(name) {
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name || '') && !RESERVED_IDENTIFIERS.has(name);
+}
+
+function isTokenInCode(document, position, rangeInfo) {
+  if (!document || !rangeInfo) return false;
+  const lines = sanitizeLinesForAnalysis(document.getText());
+  const line = lines[position.line] || '';
+  return line.slice(rangeInfo.start, rangeInfo.end) === rangeInfo.token;
+}
+
+function hasLocalMemberDefinition(localIndex, token) {
+  if (!localIndex || !localIndex.membersByOwner) return false;
+  for (const members of localIndex.membersByOwner.values()) {
+    const definition = members.get(token);
+    if (definition && definition.uri) return true;
+  }
+  return false;
+}
+
+function getRenameScope(localIndex, token, position) {
+  if (!localIndex || !token || !position) return { renameable: false, scopeId: undefined };
+
+  if (localIndex.varDecls && localIndex.varDecls.has(token)) {
+    const declarations = localIndex.varDecls.get(token);
+    const lineFunctionId = (localIndex.lineFunctionIds && localIndex.lineFunctionIds[position.line]) || null;
+    const best = (lineFunctionId !== null
+      ? getClosestDeclaration(declarations, position.line, position.character, lineFunctionId)
+      : null) || getClosestDeclaration(declarations, position.line, position.character, null);
+    if (best) {
+      return { renameable: true, scopeId: best.scopeId };
+    }
+  }
+
+  if ((localIndex.definitions && localIndex.definitions.has(token)) || hasLocalMemberDefinition(localIndex, token)) {
+    return { renameable: true, scopeId: undefined };
+  }
+
+  return { renameable: false, scopeId: undefined };
+}
+
 function validateTextDocument(document) {
   const text = document.getText();
   const diagnostics = [];
@@ -1821,10 +1894,12 @@ function validateTextDocument(document) {
 
   const localIndex = documentIndexes.get(document.uri);
   const opening = new Map([
+    ['(', ')'],
     ['{', '}'],
     ['[', ']']
   ]);
   const closing = new Map([
+    [')', '('],
     ['}', '{'],
     [']', '[']
   ]);
@@ -1834,15 +1909,32 @@ function validateTextDocument(document) {
   let inLineComment = false;
   let inBlockComment = false;
   let inString = false;
+  let stringQuote = null;
+  let blockCommentStart = null;
+  let stringStart = null;
 
   for (let i = 0; i < text.length; i += 1) {
     const ch = text[i];
     const next = i + 1 < text.length ? text[i + 1] : '';
 
-    if (ch === '\n') {
+    if (ch === '\n' || ch === '\r') {
+      if (inString && stringStart) {
+        diagnostics.push({
+          severity: DiagnosticSeverity.Error,
+          range: Range.create(stringStart.line, stringStart.character, stringStart.line, stringStart.character + 1),
+          message: `String literal starting with ${stringQuote} is not closed`,
+          source: SCRIPT_SOURCE
+        });
+        inString = false;
+        stringQuote = null;
+        stringStart = null;
+      }
       line += 1;
       character = 0;
       inLineComment = false;
+      if (ch === '\r' && next === '\n') {
+        i += 1;
+      }
       continue;
     }
 
@@ -1854,6 +1946,7 @@ function validateTextDocument(document) {
     if (inBlockComment) {
       if (ch === '*' && next === '/') {
         inBlockComment = false;
+        blockCommentStart = null;
         i += 1;
         character += 2;
       } else {
@@ -1868,8 +1961,10 @@ function validateTextDocument(document) {
         character += 2;
         continue;
       }
-      if (ch === '"') {
+      if (ch === stringQuote) {
         inString = false;
+        stringQuote = null;
+        stringStart = null;
       }
       character += 1;
       continue;
@@ -1884,13 +1979,16 @@ function validateTextDocument(document) {
 
     if (ch === '/' && next === '*') {
       inBlockComment = true;
+      blockCommentStart = { line, character };
       i += 1;
       character += 2;
       continue;
     }
 
-    if (ch === '"') {
+    if (ch === '"' || ch === "'") {
       inString = true;
+      stringQuote = ch;
+      stringStart = { line, character };
       character += 1;
       continue;
     }
@@ -1913,6 +2011,24 @@ function validateTextDocument(document) {
     }
 
     character += 1;
+  }
+
+  if (inString && stringStart) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: Range.create(stringStart.line, stringStart.character, stringStart.line, stringStart.character + 1),
+      message: `String literal starting with ${stringQuote} is not closed`,
+      source: SCRIPT_SOURCE
+    });
+  }
+
+  if (inBlockComment && blockCommentStart) {
+    diagnostics.push({
+      severity: DiagnosticSeverity.Error,
+      range: Range.create(blockCommentStart.line, blockCommentStart.character, blockCommentStart.line, blockCommentStart.character + 2),
+      message: 'Block comment is not closed',
+      source: SCRIPT_SOURCE
+    });
   }
 
   for (const entry of stack) {
@@ -2022,7 +2138,8 @@ connection.onInitialize((params) => {
   if (options.bundledSdkPath) {
     loadSdk.bundledSdkPath = options.bundledSdkPath;
   }
-  loadSdk(params.workspaceFolders || []);
+  workspaceFolders = resolveWorkspaceFolders(params);
+  loadSdk(workspaceFolders);
 
   return {
     capabilities: {
@@ -2035,7 +2152,13 @@ connection.onInitialize((params) => {
       definitionProvider: true,
       documentSymbolProvider: true,
       documentFormattingProvider: true,
-      renameProvider: { prepareProvider: true }
+      renameProvider: { prepareProvider: true },
+      workspace: {
+        workspaceFolders: {
+          supported: true,
+          changeNotifications: true
+        }
+      }
     }
   };
 });
@@ -2045,6 +2168,23 @@ connection.onInitialized(() => {
     indexDocument(doc);
     validateTextDocument(doc);
   }
+
+  if (connection.workspace && typeof connection.workspace.onDidChangeWorkspaceFolders === 'function') {
+    connection.workspace.onDidChangeWorkspaceFolders((event) => {
+      const removedUris = new Set((event.removed || []).map((folder) => folder.uri));
+      workspaceFolders = workspaceFolders.filter((folder) => !removedUris.has(folder.uri));
+      const byUri = new Map(workspaceFolders.map((folder) => [folder.uri, folder]));
+      for (const folder of event.added || []) {
+        if (folder && folder.uri) byUri.set(folder.uri, folder);
+      }
+      workspaceFolders = [...byUri.values()];
+      refreshSdkAndOpenDocuments();
+    });
+  }
+});
+
+connection.onDidChangeWatchedFiles(() => {
+  refreshSdkAndOpenDocuments();
 });
 
 documents.onDidOpen((event) => {
@@ -2119,7 +2259,7 @@ connection.onDocumentFormatting((params) => {
     return [];
   }
 
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\n|\r/);
   const lastLineIndex = Math.max(0, lines.length - 1);
   const lastLineLength = lines[lastLineIndex] ? lines[lastLineIndex].length : 0;
 
@@ -2136,7 +2276,10 @@ connection.onPrepareRename((params) => {
   const rangeInfo = wordRangeAt(document, params.position);
   if (!rangeInfo || !rangeInfo.token) return null;
 
-  if (RESERVED_IDENTIFIERS.has(rangeInfo.token)) return null;
+  if (!isValidRenameIdentifier(rangeInfo.token) || !isTokenInCode(document, params.position, rangeInfo)) return null;
+
+  const localIndex = documentIndexes.get(params.textDocument.uri);
+  if (!getRenameScope(localIndex, rangeInfo.token, params.position).renameable) return null;
 
   return {
     range: Range.create(params.position.line, rangeInfo.start, params.position.line, rangeInfo.end),
@@ -2153,7 +2296,8 @@ connection.onRenameRequest((params) => {
 
   const newName = (params.newName || '').trim();
   if (!newName || newName === rangeInfo.token) return null;
-  if (RESERVED_IDENTIFIERS.has(rangeInfo.token)) return null;
+  if (!isValidRenameIdentifier(newName) || !isValidRenameIdentifier(rangeInfo.token)) return null;
+  if (!isTokenInCode(document, params.position, rangeInfo)) return null;
 
   const localIndex = documentIndexes.get(params.textDocument.uri);
 
@@ -2162,17 +2306,9 @@ connection.onRenameRequest((params) => {
   // occurrences on lines that belong to that same function scope.
   // For globals (scopeId === null) or non-variable symbols (scopeId === undefined)
   // the search is document-wide (no scope filter applied).
-  let scopeId;
-  if (localIndex && localIndex.varDecls && localIndex.varDecls.has(rangeInfo.token)) {
-    const declarations = localIndex.varDecls.get(rangeInfo.token);
-    const lineFunctionId = (localIndex.lineFunctionIds && localIndex.lineFunctionIds[params.position.line]) || null;
-    const best = (lineFunctionId !== null
-      ? getClosestDeclaration(declarations, params.position.line, params.position.character, lineFunctionId)
-      : null) || getClosestDeclaration(declarations, params.position.line, params.position.character, null);
-    if (best) {
-      scopeId = best.scopeId;
-    }
-  }
+  const renameScope = getRenameScope(localIndex, rangeInfo.token, params.position);
+  if (!renameScope.renameable) return null;
+  const scopeId = renameScope.scopeId;
 
   const occurrences = findAllOccurrencesInDocument(document, rangeInfo.token, localIndex, scopeId);
   if (!occurrences.length) return null;

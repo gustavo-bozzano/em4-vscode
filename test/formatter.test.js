@@ -29,6 +29,14 @@ test('formatter preserves CRLF line endings', () => {
     assert.equal(formatted, expected);
 });
 
+test('formatter supports legacy CR line endings', () => {
+    const { formatScriptText } = loadServerInternals();
+    const source = ['object Test : CommandScript', '{', 'void Foo()', '{', 'return;', '}', '};'].join('\r');
+    const expected = ['object Test : CommandScript', '{', '  void Foo()', '  {', '    return;', '  }', '};'].join('\r');
+
+    assert.equal(formatScriptText(source, { insertSpaces: true, tabSize: 2 }), expected);
+});
+
 test('formatter keeps block comment-only lines unchanged', () => {
     const { formatScriptText } = loadServerInternals();
     const source = [

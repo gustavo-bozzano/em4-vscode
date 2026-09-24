@@ -13,8 +13,11 @@ VSCode extension for Emergency 4 `.script` files.
   - **Hover with signature + documentation** extracted from `//` comments in SDK/source code
   - **Basic diagnostics**:
     - unbalanced delimiters (`()`, `[]`, `{}`)
+    - unterminated string literals and block comments
     - undeclared base identifier in member access
     - missing member for inferred type/namespace
+  - Document formatting with spaces or tabs while preserving the file's line endings
+  - Scope-aware rename for symbols declared in the current document
   - Document symbols
 
 ## How to test locally
@@ -28,10 +31,12 @@ VSCode extension for Emergency 4 `.script` files.
 
 ## Notes
 
+- The extension ships with a bundled SDK (`sdk`) for hover, definition, completion and validation out of the box.
 - If a workspace-level `EM4 sdk` folder exists, it is also loaded.
+- Changes inside `.script` files reload the workspace SDK without restarting VSCode.
 - SDK hover/completion documentation is read from contiguous `//` comments or block comments (`/* ... */`) placed directly above declarations.
 - Keep SDK comments in English and close to the related symbol (`enum`, `class`, method, function, constant) so the LSP can attach the text reliably.
-- 
+
 ## License
 
 This project is licensed under the GNU GPL v3.

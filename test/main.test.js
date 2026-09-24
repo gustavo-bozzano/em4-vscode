@@ -103,6 +103,20 @@ test('parser attaches block comment docs to following declaration', () => {
 	assert.equal(foo.documentation, 'Block line 1.\nBlock line 2.');
 });
 
+test('workspace resolution supports modern and legacy LSP clients', () => {
+	const { resolveWorkspaceFolders } = loadServerInternals();
+	const modern = resolveWorkspaceFolders({
+		workspaceFolders: [{ uri: 'file:///workspace', name: 'workspace' }],
+		rootUri: 'file:///ignored'
+	});
+	const legacy = resolveWorkspaceFolders({ workspaceFolders: null, rootUri: 'file:///legacy-workspace' });
+
+	assert.equal(modern.length, 1);
+	assert.equal(modern[0].uri, 'file:///workspace');
+	assert.equal(legacy.length, 1);
+	assert.equal(legacy[0].uri, 'file:///legacy-workspace');
+});
+
 test('autocomplete suggests enum values for enum-typed method arguments', () => {
 	const { loadSdk, parseDocument, buildCompletionItems } = loadServerInternals();
 	const sdkPath = path.resolve(__dirname, '..', 'sdk');
@@ -221,4 +235,80 @@ test('semicolon validation ignores block and control-flow lines', () => {
 	const diagnostics = diagnosticsByUri.get(uri) || [];
 	const semicolonDiagnostics = diagnostics.filter((d) => d.message === "Missing ';' at end of line");
 	assert.equal(semicolonDiagnostics.length, 0, JSON.stringify(diagnostics, null, 2));
+});
+
+test('delimiter validation reports unclosed parentheses', () => {
+	const { indexDocument, validateTextDocument, diagnosticsByUri } = loadServerInternals();
+	const source = [
+		'object TestParenthesis : CommandScript',
+		'{',
+		'  void Foo()',
+		'  {',
+		'    if (true',
+		'      return;',
+		'  }',
+		'};'
+	].join('\n');
+	const uri = 'file:///tmp/TestParenthesis.script';
+	const doc = { uri, getText: () => source };
+
+	indexDocument(doc);
+	validateTextDocument(doc);
+
+	const diagnostics = diagnosticsByUri.get(uri) || [];
+	assert.ok(
+		diagnostics.some((diagnostic) => diagnostic.message === "Delimiter '(' is not closed"),
+		JSON.stringify(diagnostics, null, 2)
+	);
+});
+
+test('delimiter validation ignores delimiters and comments inside single-quoted literals', () => {
+	const { indexDocument, validateTextDocument, diagnosticsByUri } = loadServerInternals();
+	const source = [
+		'object TestCharacters : CommandScript',
+		'{',
+		'  void Foo()',
+		'  {',
+		"    char closeParen = ')';",
+		"    char openBrace = '{';",
+		"    char slash = '/';",
+		'  }',
+		'};'
+	].join('\n');
+	const uri = 'file:///tmp/TestCharacters.script';
+	const doc = { uri, getText: () => source };
+
+	indexDocument(doc);
+	validateTextDocument(doc);
+
+	const diagnostics = diagnosticsByUri.get(uri) || [];
+	const delimiterDiagnostics = diagnostics.filter((diagnostic) => diagnostic.message.startsWith('Delimiter'));
+	assert.equal(delimiterDiagnostics.length, 0, JSON.stringify(diagnostics, null, 2));
+});
+
+test('validation reports unterminated strings and block comments', () => {
+	const { indexDocument, validateTextDocument, diagnosticsByUri } = loadServerInternals();
+	const cases = [
+		{
+			uri: 'file:///tmp/TestUnclosedString.script',
+			source: 'const char NAME[] = "not closed',
+			message: 'String literal starting with " is not closed'
+		},
+		{
+			uri: 'file:///tmp/TestUnclosedComment.script',
+			source: '/* not closed',
+			message: 'Block comment is not closed'
+		}
+	];
+
+	for (const testCase of cases) {
+		const doc = { uri: testCase.uri, getText: () => testCase.source };
+		indexDocument(doc);
+		validateTextDocument(doc);
+		const diagnostics = diagnosticsByUri.get(testCase.uri) || [];
+		assert.ok(
+			diagnostics.some((diagnostic) => diagnostic.message === testCase.message),
+			JSON.stringify(diagnostics, null, 2)
+		);
+	}
 });
