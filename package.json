@@ -2,7 +2,7 @@
   "name": "em4-script",
   "displayName": "EM4 Script",
   "description": "Language support for Emergency 4 .script",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "url": "https://github.com/gustavo-bozzano/em4-vscode",
     "type": "git"
@@ -28,11 +28,10 @@
     "languages": [
       {
         "id": "em4script",
-        "icon": 
-          {
-            "light": "./icons/em4script-light.png",
-            "dark": "./icons/em4script-dark.png"
-          },
+        "icon": {
+          "light": "./icons/em4script-light.png",
+          "dark": "./icons/em4script-dark.png"
+        },
         "aliases": [
           "EM4 Script",
           "Emergency 4 Script",
