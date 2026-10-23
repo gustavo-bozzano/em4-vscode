@@ -18,7 +18,7 @@ function activate(context) {
       bundledSdkPath: context.asAbsolutePath(path.join('sdk'))
     },
     synchronize: {
-      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.script')
+      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{script,lib}')
     }
   };
 

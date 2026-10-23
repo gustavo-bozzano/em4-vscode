@@ -37,8 +37,13 @@ const sdkMembersByOwner = new Map();
 const sdkBaseByType = new Map();
 const sdkEnumMembersByType = new Map();
 const sdkKnownOwners = new Set();
+const sdkOwnerNamesByLowercase = new Map();
 const sdkKnownTypes = new Set([...BUILTIN_TYPES]);
 const PRIMITIVE_ASSIGNMENT_TYPES = new Set(['bool', 'int', 'float', 'char', 'string']);
+const EM4_SOURCE_EXTENSIONS = new Set(['.script', '.lib']);
+const WORKSPACE_SCAN_IGNORED_DIRECTORIES = new Set([
+  '.git', '.hg', '.svn', '.vscode', 'node_modules', 'dist', 'out'
+]);
 
 const documentIndexes = new Map();
 let workspaceFolders = [];
@@ -54,6 +59,49 @@ function uriToPath(uri) {
 
 function pathToUri(filePath) {
   return pathToFileURL(filePath).toString();
+}
+
+function normalizedPathKey(filePath) {
+  return path.resolve(filePath).replace(/\\/g, '/').toLowerCase();
+}
+
+function collectFilesByExtension(rootPath, extensions) {
+  const files = [];
+  const pendingDirectories = [rootPath];
+
+  while (pendingDirectories.length) {
+    const currentDirectory = pendingDirectories.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(currentDirectory, { withFileTypes: true });
+    } catch (err) {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentDirectory, entry.name);
+      if (entry.isDirectory()) {
+        if (!WORKSPACE_SCAN_IGNORED_DIRECTORIES.has(entry.name.toLowerCase())) {
+          pendingDirectories.push(fullPath);
+        }
+        continue;
+      }
+      if (entry.isFile() && extensions.has(path.extname(entry.name).toLowerCase())) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+function registerSdkOwner(owner) {
+  if (!owner) return;
+  sdkKnownOwners.add(owner);
+  const normalized = owner.toLowerCase();
+  if (!sdkOwnerNamesByLowercase.has(normalized)) {
+    sdkOwnerNamesByLowercase.set(normalized, owner);
+  }
 }
 
 function resolveWorkspaceFolders(params) {
@@ -868,63 +916,92 @@ function loadSdk(workspaceFolders) {
   sdkBaseByType.clear();
   sdkEnumMembersByType.clear();
   sdkKnownOwners.clear();
+  sdkOwnerNamesByLowercase.clear();
   sdkKnownTypes.clear();
   for (const t of BUILTIN_TYPES) {
     sdkKnownTypes.add(t);
   }
 
-  const sdkDirs = [];
+  const sourceFiles = [];
+  const seenFiles = new Set();
+  const addSourceFiles = (files) => {
+    for (const file of files) {
+      const key = normalizedPathKey(file);
+      if (seenFiles.has(key)) continue;
+      seenFiles.add(key);
+      sourceFiles.push(file);
+    }
+  };
+
   for (const folder of workspaceFolders || []) {
     const basePath = uriToPath(folder.uri);
     if (!basePath) continue;
     const sdkDir = path.join(basePath, 'EM4 sdk');
     if (fs.existsSync(sdkDir)) {
-      sdkDirs.push(sdkDir);
+      addSourceFiles(collectFilesByExtension(sdkDir, EM4_SOURCE_EXTENSIONS));
     }
+    addSourceFiles(collectFilesByExtension(basePath, new Set(['.lib'])));
   }
 
   if (loadSdk.bundledSdkPath && fs.existsSync(loadSdk.bundledSdkPath)) {
-    sdkDirs.push(loadSdk.bundledSdkPath);
+    addSourceFiles(collectFilesByExtension(loadSdk.bundledSdkPath, EM4_SOURCE_EXTENSIONS));
   }
 
-  for (const sdkDir of sdkDirs) {
-    const files = fs.readdirSync(sdkDir).filter((f) => f.toLowerCase().endsWith('.script'));
-    for (const file of files) {
-      const fullPath = path.join(sdkDir, file);
-      const uri = pathToUri(fullPath);
-      const content = fs.readFileSync(fullPath, 'utf8');
-      const parsed = parseDocument(content, uri);
+  for (const fullPath of sourceFiles) {
+    const uri = pathToUri(fullPath);
+    let content;
+    try {
+      content = fs.readFileSync(fullPath, 'utf8');
+    } catch (err) {
+      connection.console.warn(`Failed to read EM4 source file: ${fullPath} (${err.message})`);
+      continue;
+    }
+    const parsed = parseDocument(content, uri);
+    const extension = path.extname(fullPath).toLowerCase();
+    const libraryOwner = extension === '.lib'
+      ? path.basename(fullPath, extension)
+      : null;
 
-      for (const owner of parsed.knownOwners) {
-        sdkKnownOwners.add(owner);
+    if (libraryOwner) {
+      registerSdkOwner(libraryOwner);
+    }
+
+    for (const owner of parsed.knownOwners) {
+      registerSdkOwner(owner);
+    }
+    for (const typeName of parsed.knownTypes) {
+      sdkKnownTypes.add(typeName);
+    }
+    for (const [typeName, baseTypes] of parsed.baseByType.entries()) {
+      if (!sdkBaseByType.has(typeName)) {
+        sdkBaseByType.set(typeName, baseTypes);
       }
-      for (const typeName of parsed.knownTypes) {
-        sdkKnownTypes.add(typeName);
-      }
-      for (const [typeName, baseTypes] of parsed.baseByType.entries()) {
-        if (!sdkBaseByType.has(typeName)) {
-          sdkBaseByType.set(typeName, baseTypes);
+    }
+    for (const [enumName, enumMembers] of parsed.enumMembersByType.entries()) {
+      const target = ensureMapEntry(sdkEnumMembersByType, enumName);
+      for (const [memberName, memberDef] of enumMembers.entries()) {
+        if (!target.has(memberName)) {
+          target.set(memberName, memberDef);
         }
       }
-      for (const [enumName, enumMembers] of parsed.enumMembersByType.entries()) {
-        const target = ensureMapEntry(sdkEnumMembersByType, enumName);
-        for (const [memberName, memberDef] of enumMembers.entries()) {
-          if (!target.has(memberName)) {
-            target.set(memberName, memberDef);
-          }
-        }
-      }
+    }
 
-      for (const [name, def] of parsed.definitions.entries()) {
+    for (const [name, def] of parsed.definitions.entries()) {
+      if (libraryOwner && !def.owner) {
+        const libraryMembers = ensureMapEntry(sdkMembersByOwner, libraryOwner);
+        if (!libraryMembers.has(name)) {
+          libraryMembers.set(name, { ...def, owner: libraryOwner });
+        }
+      } else {
         addSdkDefinition(name, def);
       }
+    }
 
-      for (const [owner, members] of parsed.membersByOwner.entries()) {
-        const target = ensureMapEntry(sdkMembersByOwner, owner);
-        for (const [memberName, memberDef] of members.entries()) {
-          if (!target.has(memberName)) {
-            target.set(memberName, memberDef);
-          }
+    for (const [owner, members] of parsed.membersByOwner.entries()) {
+      const target = ensureMapEntry(sdkMembersByOwner, owner);
+      for (const [memberName, memberDef] of members.entries()) {
+        if (!target.has(memberName)) {
+          target.set(memberName, memberDef);
         }
       }
     }
@@ -969,6 +1046,10 @@ function resolveOwnerType(localIndex, ownerToken, lineNumber) {
   }
   if (sdkKnownOwners.has(ownerToken)) {
     return ownerToken;
+  }
+  const caseInsensitiveSdkOwner = sdkOwnerNamesByLowercase.get(ownerToken.toLowerCase());
+  if (caseInsensitiveSdkOwner) {
+    return caseInsensitiveSdkOwner;
   }
   if (sdkKnownTypes.has(ownerToken)) {
     return ownerToken;

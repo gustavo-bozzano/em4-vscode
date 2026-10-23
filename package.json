@@ -1,7 +1,7 @@
 {
   "name": "em4-script",
   "displayName": "EM4 Script",
-  "description": "Language support for Emergency 4 .script",
+  "description": "Language support for Emergency 4 .script and .lib files",
   "version": "1.0.1",
   "repository": {
     "url": "https://github.com/gustavo-bozzano/em4-vscode",
@@ -38,7 +38,8 @@
           "911 First Responders Script"
         ],
         "extensions": [
-          ".script"
+          ".script",
+          ".lib"
         ],
         "configuration": "./language-configuration/em4script.json"
       }

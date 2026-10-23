@@ -1,6 +1,6 @@
 # EM4 Script
 
-Language support for **Emergency 4** and **911: First Responders** `.script` files in Visual Studio Code.
+Language support for **Emergency 4** and **911: First Responders** `.script` and `.lib` files in Visual Studio Code.
 
 EM4 Script combines reliable syntax highlighting with a dedicated Language Server Protocol implementation, providing completion, navigation, documentation, diagnostics, formatting, and symbol tools for Emergency 4 mod development.
 
@@ -10,7 +10,7 @@ Project repository: [https://github.com/gustavo-bozzano/em4-vscode](https://gith
 
 ### Syntax highlighting
 
-- Automatic recognition of `.script` files as **EM4 Script**
+- Automatic recognition of `.script` and `.lib` files as **EM4 Script**
 - Highlighting for types, declarations, functions, members, constants, numbers, operators, comments, strings, and preprocessor directives
 - Correct highlighting for multiple variables declared on the same line
 - Recovery after incomplete strings, comments, and enum declarations, preventing the rest of the file from losing its colors
@@ -21,7 +21,7 @@ bool mStartCutScene, mBusExtinguished, mExplosion, mTooManyVictims;
 
 ### Intelligent completion
 
-- Suggestions for language keywords, local symbols, and SDK symbols
+- Suggestions for language keywords, local symbols, SDK symbols, and workspace libraries
 - Type-aware member completion after `->`, `.`, and `::`
 - Contextual suggestions for classes such as `Vehicle`, `Person`, and other SDK types
 - Support for inherited SDK members
@@ -49,13 +49,13 @@ Diagnostics are designed to provide fast feedback while editing. They do not rep
 - Document formatting with spaces or tabs
 - Preservation of the file's existing line endings
 - Scope-aware rename for symbols declared in the current document
-- Automatic refresh when `.script` files change
+- Automatic refresh when `.script` or `.lib` files change
 
 ## Getting started
 
 1. Install **EM4 Script** from the Visual Studio Code Marketplace.
 2. Open your Emergency 4 mod or script folder in Visual Studio Code.
-3. Open any file ending in `.script`.
+3. Open any file ending in `.script` or `.lib`.
 
 The extension activates automatically. If a file is not detected, click the language indicator in the lower-right corner of Visual Studio Code and select **EM4 Script**.
 
@@ -75,7 +75,18 @@ my-em4-mod/
         └── MyCommand.script
 ```
 
-All `.script` files inside `EM4 sdk` are loaded together with the bundled SDK. Changes to script files are detected without restarting Visual Studio Code.
+All `.script` and `.lib` files inside `EM4 sdk` are loaded together with the bundled SDK. Changes to source files are detected without restarting Visual Studio Code.
+
+## Library support
+
+Workspace `.lib` files are indexed automatically and treated as EM4 Script source files. Global declarations in a library are exposed through the library filename, matching Emergency 4 usage. For example, functions declared in `lang.lib` are available through `Lang::`:
+
+```cpp
+Lang::PlayHint("BHint_0");
+Lang::ShowMessageTickerTextForSinglePlayer(Caller, "BHint_1");
+```
+
+Library names are matched without case sensitivity, so `lang.lib` correctly provides the `Lang` namespace used by scripts.
 
 To provide useful hover documentation, place `//` comments or block comments directly above a declaration:
 

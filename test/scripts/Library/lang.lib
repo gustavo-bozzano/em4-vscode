@@ -1,0 +1,9 @@
+// Displays a localized hint.
+void PlayHint(char *message, bool prefixFolder = false)
+{
+}
+
+// Displays a localized ticker message for one player.
+void ShowMessageTickerTextForSinglePlayer(GameObject *Caller, char *message)
+{
+}
