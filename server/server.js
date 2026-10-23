@@ -813,7 +813,8 @@ function parseDocument(text, uri) {
           pendingFunction = {
             line: i,
             sourceLine: lines[i] || '',
-            signature: analysisTrimmed
+            signature: analysisTrimmed,
+            documentation
           };
         }
 
@@ -834,7 +835,8 @@ function parseDocument(text, uri) {
             const character = captureStart(pendingFunction.sourceLine, pendingFunction.sourceLine, name);
             const functionLine = pendingFunction.line;
             const detail = returnType ? `${returnType} ${name}(${params})` : `${name}(${params})`;
-            const def = createDefinition(uri, functionLine, character, detail, SymbolKind.Function, documentation, owner);
+            const functionDocumentation = pendingFunction.documentation || documentation;
+            const def = createDefinition(uri, functionLine, character, detail, SymbolKind.Function, functionDocumentation, owner);
 
             if (!definitions.has(name)) {
               definitions.set(name, def);
@@ -1265,9 +1267,16 @@ function getContextAtPosition(document, position) {
 }
 
 function getCallContextAtPosition(document, position) {
-  const lines = document.getText().split(/\r\n|\n|\r/);
-  const line = lines[position.line] || '';
-  const before = line.slice(0, position.character);
+  if (!document || !position || !Number.isInteger(position.line) || !Number.isInteger(position.character)) {
+    return null;
+  }
+
+  const lines = sanitizeLinesForAnalysis(document.getText());
+  if (position.line < 0 || position.line >= lines.length) return null;
+  const before = [
+    ...lines.slice(0, position.line),
+    (lines[position.line] || '').slice(0, position.character)
+  ].join('\n');
   const stack = [];
 
   for (let i = 0; i < before.length; i += 1) {
@@ -1310,6 +1319,125 @@ function getCallContextAtPosition(document, position) {
   };
 }
 
+function splitSignatureParameters(paramText) {
+  const text = (paramText || '').trim();
+  if (!text || text === 'void') return [];
+
+  const params = [];
+  let start = 0;
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let braceDepth = 0;
+  let angleDepth = 0;
+  let quote = null;
+  let escaped = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (ch === '\\') {
+        escaped = true;
+      } else if (ch === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") quote = ch;
+    else if (ch === '(') parenDepth += 1;
+    else if (ch === ')') parenDepth = Math.max(0, parenDepth - 1);
+    else if (ch === '[') bracketDepth += 1;
+    else if (ch === ']') bracketDepth = Math.max(0, bracketDepth - 1);
+    else if (ch === '{') braceDepth += 1;
+    else if (ch === '}') braceDepth = Math.max(0, braceDepth - 1);
+    else if (ch === '<') angleDepth += 1;
+    else if (ch === '>') angleDepth = Math.max(0, angleDepth - 1);
+    else if (ch === ',' && parenDepth === 0 && bracketDepth === 0 && braceDepth === 0 && angleDepth === 0) {
+      const param = text.slice(start, i).trim();
+      if (param) params.push(param);
+      start = i + 1;
+    }
+  }
+
+  const finalParam = text.slice(start).trim();
+  if (finalParam) params.push(finalParam);
+  return params;
+}
+
+function resolveFunctionDefinitionForCall(localIndex, callContext, lineNumber) {
+  if (!callContext) return null;
+
+  if (callContext.ownerToken && callContext.methodName) {
+    const ownerType = resolveOwnerType(localIndex, callContext.ownerToken, lineNumber);
+    return ownerType ? getMemberDefinition(localIndex, ownerType, callContext.methodName) : null;
+  }
+
+  if (!callContext.functionName) return null;
+
+  const implicitOwner = (localIndex && localIndex.lineTypeOwners)
+    ? (localIndex.lineTypeOwners[lineNumber] || null)
+    : null;
+  if (implicitOwner) {
+    const implicitMember = getMemberDefinition(localIndex, implicitOwner, callContext.functionName);
+    if (implicitMember) return implicitMember;
+  }
+
+  if (localIndex && localIndex.definitions.has(callContext.functionName)) {
+    const localDefinition = localIndex.definitions.get(callContext.functionName);
+    if (localDefinition && localDefinition.kind === SymbolKind.Function) {
+      return localDefinition;
+    }
+  }
+
+  const constructorDefinition = getMemberDefinition(
+    localIndex,
+    callContext.functionName,
+    callContext.functionName
+  );
+  if (constructorDefinition) return constructorDefinition;
+
+  if (sdkByName.has(callContext.functionName)) {
+    return sdkByName.get(callContext.functionName);
+  }
+
+  return null;
+}
+
+function buildSignatureHelp(document, localIndex, position) {
+  const callContext = getCallContextAtPosition(document, position);
+  if (!callContext) return null;
+
+  const functionDef = resolveFunctionDefinitionForCall(localIndex, callContext, position.line);
+  if (!functionDef || functionDef.kind !== SymbolKind.Function) return null;
+
+  const parsed = parseFunctionSignature(functionDef.detail);
+  if (!parsed) return null;
+
+  const parameterLabels = splitSignatureParameters(parsed.params);
+  const parameters = parameterLabels.map((label) => ({ label }));
+  const activeParameter = parameters.length
+    ? Math.min(Math.max(0, callContext.argIndex), parameters.length - 1)
+    : 0;
+  const signature = {
+    label: functionDef.detail,
+    parameters
+  };
+  if (functionDef.documentation) {
+    signature.documentation = {
+      kind: MarkupKind.Markdown,
+      value: functionDef.documentation
+    };
+  }
+
+  return {
+    signatures: [signature],
+    activeSignature: 0,
+    activeParameter
+  };
+}
+
 function collectEnumMembersByType(localIndex, enumType) {
   const merged = new Map();
   if (localIndex && localIndex.enumMembersByType && localIndex.enumMembersByType.has(enumType)) {
@@ -1331,19 +1459,7 @@ function getEnumCompletionItemsForCall(document, localIndex, position) {
   const callContext = getCallContextAtPosition(document, position);
   if (!callContext) return [];
 
-  let functionDef = null;
-  if (callContext.ownerToken && callContext.methodName) {
-    const ownerType = resolveOwnerType(localIndex, callContext.ownerToken, position.line);
-    if (ownerType) {
-      functionDef = getMemberDefinition(localIndex, ownerType, callContext.methodName);
-    }
-  } else if (callContext.functionName) {
-    if (localIndex && localIndex.definitions.has(callContext.functionName)) {
-      functionDef = localIndex.definitions.get(callContext.functionName);
-    } else if (sdkByName.has(callContext.functionName)) {
-      functionDef = sdkByName.get(callContext.functionName);
-    }
-  }
+  const functionDef = resolveFunctionDefinitionForCall(localIndex, callContext, position.line);
 
   if (!functionDef || functionDef.kind !== SymbolKind.Function) {
     return [];
@@ -2229,6 +2345,10 @@ connection.onInitialize((params) => {
         resolveProvider: false,
         triggerCharacters: ['.', '>', ':']
       },
+      signatureHelpProvider: {
+        triggerCharacters: ['(', ','],
+        retriggerCharacters: [',']
+      },
       hoverProvider: true,
       definitionProvider: true,
       documentSymbolProvider: true,
@@ -2287,6 +2407,14 @@ connection.onCompletion((params) => {
   const document = documents.get(params.textDocument.uri);
   const localIndex = documentIndexes.get(params.textDocument.uri);
   return buildCompletionItems(document, localIndex, params.position);
+});
+
+connection.onSignatureHelp((params) => {
+  const document = documents.get(params.textDocument.uri);
+  if (!document) return null;
+
+  const localIndex = documentIndexes.get(params.textDocument.uri);
+  return buildSignatureHelp(document, localIndex, params.position);
 });
 
 connection.onHover((params) => {

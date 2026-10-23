@@ -25,6 +25,7 @@ bool mStartCutScene, mBusExtinguished, mExplosion, mTooManyVictims;
 - Type-aware member completion after `->`, `.`, and `::`
 - Contextual suggestions for classes such as `Vehicle`, `Person`, and other SDK types
 - Support for inherited SDK members
+- Signature Help with the current parameter highlighted while writing function and method calls
 
 ### Navigation and documentation
 
