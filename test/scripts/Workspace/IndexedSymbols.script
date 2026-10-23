@@ -1,0 +1,13 @@
+// Accepts a numeric value.
+void WorkspaceUtility(int value);
+
+// Accepts a text value.
+void WorkspaceUtility(char *message);
+
+object WorkspaceIndexedObject
+{
+  int Counter;
+
+  // Runs the indexed workspace action.
+  static void Execute(int amount);
+};

@@ -25,6 +25,7 @@ bool mStartCutScene, mBusExtinguished, mExplosion, mTooManyVictims;
 - Type-aware member completion after `->`, `.`, and `::`
 - Contextual suggestions for classes such as `Vehicle`, `Person`, and other SDK types
 - Support for inherited SDK members
+- Overload-aware function and method suggestions
 - Signature Help with the current parameter highlighted while writing function and method calls
 
 ### Navigation and documentation
@@ -32,7 +33,8 @@ bool mStartCutScene, mBusExtinguished, mExplosion, mTooManyVictims;
 - **Go to Definition** for local declarations, SDK symbols, and contextual members
 - Hover information with signatures and documentation
 - Documentation extracted from comments placed directly above SDK or source declarations
-- Document symbol navigation for classes, functions, variables, enums, and other declarations
+- Document symbol navigation for classes, functions, fields, global variables, enums, and other declarations
+- Workspace symbol search across closed and open `.script` and `.lib` files
 
 ### Diagnostics
 
@@ -80,7 +82,7 @@ All `.script` and `.lib` files inside `EM4 sdk` are loaded together with the bun
 
 ## Library support
 
-Workspace `.lib` files are indexed automatically and treated as EM4 Script source files. Global declarations in a library are exposed through the library filename, matching Emergency 4 usage. For example, functions declared in `lang.lib` are available through `Lang::`:
+Workspace `.script` and `.lib` files are indexed automatically, including files that are not currently open. Global declarations in a library are exposed through the library filename, matching Emergency 4 usage. For example, functions declared in `lang.lib` are available through `Lang::`:
 
 ```cpp
 Lang::PlayHint("BHint_0");

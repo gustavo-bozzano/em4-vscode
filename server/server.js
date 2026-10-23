@@ -39,6 +39,8 @@ const sdkEnumMembersByType = new Map();
 const sdkKnownOwners = new Set();
 const sdkOwnerNamesByLowercase = new Map();
 const sdkKnownTypes = new Set([...BUILTIN_TYPES]);
+const sourceParseCache = new Map();
+let indexedSourceSymbols = [];
 const PRIMITIVE_ASSIGNMENT_TYPES = new Set(['bool', 'int', 'float', 'char', 'string']);
 const EM4_SOURCE_EXTENSIONS = new Set(['.script', '.lib']);
 const WORKSPACE_SCAN_IGNORED_DIRECTORIES = new Set([
@@ -176,16 +178,59 @@ function ensureMapEntry(map, key) {
   return map.get(key);
 }
 
+function getDefinitionVariants(definition) {
+  if (!definition) return [];
+  const variants = [definition];
+  if (Array.isArray(definition.overloads)) {
+    variants.push(...definition.overloads);
+  }
+  return variants;
+}
+
+function sameDefinitionLocation(left, right) {
+  return Boolean(left && right)
+    && left.uri === right.uri
+    && left.line === right.line
+    && left.character === right.character
+    && left.detail === right.detail
+    && left.owner === right.owner;
+}
+
+function appendDefinition(map, name, definition) {
+  if (!map || !name || !definition) return;
+
+  for (const variant of getDefinitionVariants(definition)) {
+    const storedVariant = { ...variant };
+    delete storedVariant.overloads;
+
+    if (!map.has(name)) {
+      map.set(name, storedVariant);
+      continue;
+    }
+
+    const primary = map.get(name);
+    if (getDefinitionVariants(primary).some((current) => sameDefinitionLocation(current, storedVariant))) {
+      continue;
+    }
+    if (!Array.isArray(primary.overloads)) {
+      primary.overloads = [];
+    }
+    primary.overloads.push(storedVariant);
+  }
+}
+
+function definitionOverloadCount(definition) {
+  return getDefinitionVariants(definition).length;
+}
+
 function addSdkDefinition(name, def) {
   if (!name) return;
-  if (!sdkByName.has(name)) {
-    sdkByName.set(name, def);
+  if (!def.owner) {
+    appendDefinition(sdkByName, name, def);
   }
   if (def.owner) {
     const ownerMembers = ensureMapEntry(sdkMembersByOwner, def.owner);
-    if (!ownerMembers.has(name)) {
-      ownerMembers.set(name, def);
-    }
+    appendDefinition(ownerMembers, name, def);
   }
 }
 
@@ -276,7 +321,7 @@ function parseStatementVariableDeclarations(statement, varDecls, line, scopeId) 
 
     const ctorDecl = text.match(/^([A-Za-z_][A-Za-z0-9_:<>]*)\s+[*&\s]*([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*$/);
     if (ctorDecl) {
-      if ((ctorDecl[3] || '').trim().length > 0) {
+      if (scopeId !== null && scopeId !== undefined && (ctorDecl[3] || '').trim().length > 0) {
         addVarDeclaration(varDecls, ctorDecl[2], ctorDecl[1], line, scopeId, statement.indexOf(ctorDecl[2]));
       }
       continue;
@@ -326,7 +371,7 @@ function parseFunctionSignature(signatureText) {
   return null;
 }
 
-function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwner) {
+function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwner, symbols) {
   if (!owner || !statement) return;
   const text = statement.trim();
   if (!text || text.includes('(')) return;
@@ -346,7 +391,16 @@ function parseMemberFieldDeclarations(statement, owner, uri, line, membersByOwne
     const character = Math.max(0, statement.indexOf(name));
     const detail = `${typeName} ${name}`;
     const def = createDefinition(uri, line, character, detail, SymbolKind.Constant, '', owner);
-    ensureMapEntry(membersByOwner, owner).set(name, def);
+    appendDefinition(ensureMapEntry(membersByOwner, owner), name, def);
+    if (Array.isArray(symbols)) {
+      symbols.push(SymbolInformation.create(
+        name,
+        SymbolKind.Field,
+        Range.create(line, character, line, character + name.length),
+        uri,
+        owner
+      ));
+    }
   }
 }
 
@@ -570,6 +624,7 @@ function parseDocument(text, uri) {
   const varDecls = new Map();
   const lineFunctionIds = [];
   const lineTypeOwners = [];
+  const lineOwners = [];
   const functionContexts = [];
   let nextFunctionId = 1;
 
@@ -605,9 +660,7 @@ function parseDocument(text, uri) {
   }
 
   function addDefinition(name, def, symbolKind) {
-    if (!definitions.has(name)) {
-      definitions.set(name, def);
-    }
+    appendDefinition(definitions, name, def);
     symbols.push(SymbolInformation.create(
       name,
       symbolKind,
@@ -680,6 +733,7 @@ function parseDocument(text, uri) {
     maybeActivatePendingEnum(analysisLine);
     lineFunctionIds[i] = currentFunctionId();
     lineTypeOwners[i] = currentTypeOwner();
+    lineOwners[i] = currentOwner();
 
     if (!trimmed) {
       docBuffer = [];
@@ -735,7 +789,7 @@ function parseDocument(text, uri) {
         knownOwners.add(name);
         knownTypes.add(name);
         if (owner) {
-          ensureMapEntry(membersByOwner, owner).set(name, def);
+          appendDefinition(ensureMapEntry(membersByOwner, owner), name, def);
         }
         const baseTypes = parseBaseTypes(classLikeMatch[3] || '');
         if (baseTypes.length) {
@@ -761,7 +815,7 @@ function parseDocument(text, uri) {
           addDefinition(name, def, SymbolKind.Enum);
           knownTypes.add(name);
           if (owner) {
-            ensureMapEntry(membersByOwner, owner).set(name, def);
+            appendDefinition(ensureMapEntry(membersByOwner, owner), name, def);
           }
           if (!enumMembersByType.has(name)) {
             enumMembersByType.set(name, new Map());
@@ -786,7 +840,7 @@ function parseDocument(text, uri) {
           addDefinition(memberName, def, SymbolKind.Constant);
           if (enumName) {
             ensureMapEntry(enumMembersByType, enumName).set(memberName, def);
-            ensureMapEntry(membersByOwner, enumName).set(memberName, def);
+            appendDefinition(ensureMapEntry(membersByOwner, enumName), memberName, def);
           }
         }
       }
@@ -799,7 +853,7 @@ function parseDocument(text, uri) {
         const def = createDefinition(uri, i, character, trimmed, SymbolKind.Constant, documentation, owner);
         addDefinition(name, def, SymbolKind.Constant);
         if (owner) {
-          ensureMapEntry(membersByOwner, owner).set(name, def);
+          appendDefinition(ensureMapEntry(membersByOwner, owner), name, def);
         }
       }
 
@@ -838,9 +892,7 @@ function parseDocument(text, uri) {
             const functionDocumentation = pendingFunction.documentation || documentation;
             const def = createDefinition(uri, functionLine, character, detail, SymbolKind.Function, functionDocumentation, owner);
 
-            if (!definitions.has(name)) {
-              definitions.set(name, def);
-            }
+            appendDefinition(definitions, name, def);
             symbols.push(SymbolInformation.create(
               name,
               SymbolKind.Function,
@@ -849,7 +901,7 @@ function parseDocument(text, uri) {
             ));
 
             if (owner) {
-              ensureMapEntry(membersByOwner, owner).set(name, def);
+              appendDefinition(ensureMapEntry(membersByOwner, owner), name, def);
             }
 
             const isFunctionDefinition = analysisTrimmed.includes('{') && !analysisTrimmed.includes(';');
@@ -871,15 +923,15 @@ function parseDocument(text, uri) {
         const owner = currentOwner();
         if (analysisTrimmed.endsWith(';') || analysisTrimmed.includes('{')) {
           if (owner && analysisTrimmed.endsWith(';')) {
-            parseMemberFieldDeclarations(reconstructed.replace(/;+\s*$/, ''), owner, uri, i, membersByOwner);
+            parseMemberFieldDeclarations(reconstructed.replace(/;+\s*$/, ''), owner, uri, i, membersByOwner, symbols);
           }
           pendingMultiLineDecl = null;
         }
       } else {
         parseStatementVariableDeclarations(analysisLine, varDecls, i, lineFunctionIds[i]);
         const owner = currentOwner();
-        if (owner && analysisTrimmed.endsWith(';')) {
-          parseMemberFieldDeclarations(analysisTrimmed.replace(/;+\s*$/, ''), owner, uri, i, membersByOwner);
+        if (!insideFunction && owner && analysisTrimmed.endsWith(';')) {
+          parseMemberFieldDeclarations(analysisTrimmed.replace(/;+\s*$/, ''), owner, uri, i, membersByOwner, symbols);
         }
         if (!insideFunction && currentOwner() && analysisTrimmed.endsWith(',') && !analysisTrimmed.includes('(')) {
           const typeDecl = analysisTrimmed.match(/^(?:(?:const|volatile|static|signed|unsigned)\s+)*([A-Za-z_][A-Za-z0-9_:<>]*)\s+/);
@@ -904,12 +956,62 @@ function parseDocument(text, uri) {
     popEnumContexts();
   }
 
-  return { definitions, symbols, membersByOwner, baseByType, enumMembersByType, knownOwners, knownTypes, varDecls, lineFunctionIds, lineTypeOwners, lines };
+  for (const [name, declarations] of varDecls.entries()) {
+    for (const declaration of declarations) {
+      if (declaration.scopeId !== null || lineOwners[declaration.line]) continue;
+      const def = createDefinition(
+        uri,
+        declaration.line,
+        declaration.character,
+        `${declaration.type} ${name}`,
+        SymbolKind.Variable,
+        '',
+        null
+      );
+      if (getDefinitionVariants(definitions.get(name)).some((current) => sameDefinitionLocation(current, def))) {
+        continue;
+      }
+      addDefinition(name, def, SymbolKind.Variable);
+    }
+  }
+
+  return { definitions, symbols, membersByOwner, baseByType, enumMembersByType, knownOwners, knownTypes, varDecls, lineFunctionIds, lineTypeOwners, lineOwners, lines };
 }
 
 function indexDocument(document) {
   const parsed = parseDocument(document.getText(), document.uri);
   documentIndexes.set(document.uri, parsed);
+}
+
+function parseSourceFileCached(fullPath) {
+  const key = normalizedPathKey(fullPath);
+  let stat;
+  try {
+    stat = fs.statSync(fullPath);
+  } catch (err) {
+    return null;
+  }
+
+  const cached = sourceParseCache.get(key);
+  if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+    return cached.parsed;
+  }
+
+  let content;
+  try {
+    content = fs.readFileSync(fullPath, 'utf8');
+  } catch (err) {
+    connection.console.warn(`Failed to read EM4 source file: ${fullPath} (${err.message})`);
+    return null;
+  }
+
+  const parsed = parseDocument(content, pathToUri(fullPath));
+  sourceParseCache.set(key, {
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    parsed
+  });
+  return parsed;
 }
 
 function loadSdk(workspaceFolders) {
@@ -920,6 +1022,7 @@ function loadSdk(workspaceFolders) {
   sdkKnownOwners.clear();
   sdkOwnerNamesByLowercase.clear();
   sdkKnownTypes.clear();
+  indexedSourceSymbols = [];
   for (const t of BUILTIN_TYPES) {
     sdkKnownTypes.add(t);
   }
@@ -942,23 +1045,19 @@ function loadSdk(workspaceFolders) {
     if (fs.existsSync(sdkDir)) {
       addSourceFiles(collectFilesByExtension(sdkDir, EM4_SOURCE_EXTENSIONS));
     }
-    addSourceFiles(collectFilesByExtension(basePath, new Set(['.lib'])));
+    addSourceFiles(collectFilesByExtension(basePath, EM4_SOURCE_EXTENSIONS));
   }
 
   if (loadSdk.bundledSdkPath && fs.existsSync(loadSdk.bundledSdkPath)) {
     addSourceFiles(collectFilesByExtension(loadSdk.bundledSdkPath, EM4_SOURCE_EXTENSIONS));
   }
 
+  const activeCacheKeys = new Set();
   for (const fullPath of sourceFiles) {
-    const uri = pathToUri(fullPath);
-    let content;
-    try {
-      content = fs.readFileSync(fullPath, 'utf8');
-    } catch (err) {
-      connection.console.warn(`Failed to read EM4 source file: ${fullPath} (${err.message})`);
-      continue;
-    }
-    const parsed = parseDocument(content, uri);
+    activeCacheKeys.add(normalizedPathKey(fullPath));
+    const parsed = parseSourceFileCached(fullPath);
+    if (!parsed) continue;
+    indexedSourceSymbols.push(...parsed.symbols);
     const extension = path.extname(fullPath).toLowerCase();
     const libraryOwner = extension === '.lib'
       ? path.basename(fullPath, extension)
@@ -991,8 +1090,8 @@ function loadSdk(workspaceFolders) {
     for (const [name, def] of parsed.definitions.entries()) {
       if (libraryOwner && !def.owner) {
         const libraryMembers = ensureMapEntry(sdkMembersByOwner, libraryOwner);
-        if (!libraryMembers.has(name)) {
-          libraryMembers.set(name, { ...def, owner: libraryOwner });
+        for (const variant of getDefinitionVariants(def)) {
+          appendDefinition(libraryMembers, name, { ...variant, owner: libraryOwner, overloads: undefined });
         }
       } else {
         addSdkDefinition(name, def);
@@ -1002,10 +1101,14 @@ function loadSdk(workspaceFolders) {
     for (const [owner, members] of parsed.membersByOwner.entries()) {
       const target = ensureMapEntry(sdkMembersByOwner, owner);
       for (const [memberName, memberDef] of members.entries()) {
-        if (!target.has(memberName)) {
-          target.set(memberName, memberDef);
-        }
+        appendDefinition(target, memberName, memberDef);
       }
+    }
+  }
+
+  for (const key of sourceParseCache.keys()) {
+    if (!activeCacheKeys.has(key)) {
+      sourceParseCache.delete(key);
     }
   }
 }
@@ -1409,31 +1512,47 @@ function buildSignatureHelp(document, localIndex, position) {
   const callContext = getCallContextAtPosition(document, position);
   if (!callContext) return null;
 
-  const functionDef = resolveFunctionDefinitionForCall(localIndex, callContext, position.line);
-  if (!functionDef || functionDef.kind !== SymbolKind.Function) return null;
+  const primaryDefinition = resolveFunctionDefinitionForCall(localIndex, callContext, position.line);
+  const definitions = getDefinitionVariants(primaryDefinition)
+    .filter((definition) => definition.kind === SymbolKind.Function);
+  if (!definitions.length) return null;
 
-  const parsed = parseFunctionSignature(functionDef.detail);
-  if (!parsed) return null;
+  const signatures = [];
+  const seenLabels = new Set();
+  for (const definition of definitions) {
+    const parsed = parseFunctionSignature(definition.detail);
+    if (!parsed || seenLabels.has(definition.detail)) continue;
+    seenLabels.add(definition.detail);
 
-  const parameterLabels = splitSignatureParameters(parsed.params);
-  const parameters = parameterLabels.map((label) => ({ label }));
-  const activeParameter = parameters.length
-    ? Math.min(Math.max(0, callContext.argIndex), parameters.length - 1)
-    : 0;
-  const signature = {
-    label: functionDef.detail,
-    parameters
-  };
-  if (functionDef.documentation) {
-    signature.documentation = {
-      kind: MarkupKind.Markdown,
-      value: functionDef.documentation
+    const parameterLabels = splitSignatureParameters(parsed.params);
+    const parameters = parameterLabels.map((label) => ({ label }));
+    const signature = {
+      label: definition.detail,
+      parameters,
+      activeParameter: parameters.length
+        ? Math.min(Math.max(0, callContext.argIndex), parameters.length - 1)
+        : 0
     };
+    if (definition.documentation) {
+      signature.documentation = {
+        kind: MarkupKind.Markdown,
+        value: definition.documentation
+      };
+    }
+    signatures.push(signature);
   }
 
+  if (!signatures.length) return null;
+  let activeSignature = signatures.findIndex((signature) => callContext.argIndex < signature.parameters.length);
+  if (activeSignature < 0) activeSignature = 0;
+  const activeParameters = signatures[activeSignature].parameters;
+  const activeParameter = activeParameters.length
+    ? Math.min(Math.max(0, callContext.argIndex), activeParameters.length - 1)
+    : 0;
+
   return {
-    signatures: [signature],
-    activeSignature: 0,
+    signatures,
+    activeSignature,
     activeParameter
   };
 }
@@ -1460,18 +1579,18 @@ function getEnumCompletionItemsForCall(document, localIndex, position) {
   if (!callContext) return [];
 
   const functionDef = resolveFunctionDefinitionForCall(localIndex, callContext, position.line);
-
-  if (!functionDef || functionDef.kind !== SymbolKind.Function) {
-    return [];
+  const enumMembers = new Map();
+  for (const definition of getDefinitionVariants(functionDef)) {
+    if (definition.kind !== SymbolKind.Function) continue;
+    const parsed = parseFunctionSignature(definition.detail);
+    if (!parsed) continue;
+    const params = extractParamDefinitions(parsed.params || '');
+    if (callContext.argIndex < 0 || callContext.argIndex >= params.length) continue;
+    const expectedType = params[callContext.argIndex].type;
+    for (const [name, enumDef] of collectEnumMembersByType(localIndex, expectedType).entries()) {
+      if (!enumMembers.has(name)) enumMembers.set(name, enumDef);
+    }
   }
-
-  const parsed = parseFunctionSignature(functionDef.detail);
-  if (!parsed) return [];
-  const params = extractParamDefinitions(parsed.params || '');
-  if (callContext.argIndex < 0 || callContext.argIndex >= params.length) return [];
-
-  const expectedType = params[callContext.argIndex].type;
-  const enumMembers = collectEnumMembersByType(localIndex, expectedType);
   const items = [];
   const enumMemberKind = Object.prototype.hasOwnProperty.call(CompletionItemKind, 'EnumMember')
     ? CompletionItemKind.EnumMember
@@ -1480,7 +1599,7 @@ function getEnumCompletionItemsForCall(document, localIndex, position) {
     items.push({
       label: name,
       kind: enumMemberKind,
-      detail: `${expectedType} value`,
+      detail: def.detail,
       documentation: def.documentation || undefined
     });
   }
@@ -1515,12 +1634,20 @@ function getDefinitionValueType(def) {
   return normalizeTypeName(match ? match[1] : null);
 }
 
-function resolveFunctionReturnType(localIndex, functionName) {
+function resolveFunctionReturnType(localIndex, functionName, lineNumber) {
   if (!functionName) return null;
   let fnDef = null;
-  if (localIndex && localIndex.definitions && localIndex.definitions.has(functionName)) {
-    fnDef = localIndex.definitions.get(functionName);
-  } else if (sdkByName.has(functionName)) {
+  const implicitOwner = localIndex && localIndex.lineTypeOwners && Number.isInteger(lineNumber)
+    ? (localIndex.lineTypeOwners[lineNumber] || null)
+    : null;
+  if (implicitOwner) {
+    fnDef = getMemberDefinition(localIndex, implicitOwner, functionName);
+  }
+  if (!fnDef && localIndex && localIndex.definitions && localIndex.definitions.has(functionName)) {
+    const variants = getDefinitionVariants(localIndex.definitions.get(functionName));
+    fnDef = variants.find((definition) => definition.kind === SymbolKind.Function && !definition.owner) || null;
+  }
+  if (!fnDef && sdkByName.has(functionName)) {
     fnDef = sdkByName.get(functionName);
   }
   if (!fnDef || fnDef.kind !== SymbolKind.Function) return null;
@@ -1580,7 +1707,7 @@ function inferExpressionType(expression, localIndex, lineNumber) {
 
   const functionCall = text.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(.*\)$/);
   if (functionCall) {
-    return resolveFunctionReturnType(localIndex, functionCall[1]);
+    return resolveFunctionReturnType(localIndex, functionCall[1], lineNumber);
   }
 
   const memberAccess = text.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(->|\.|::)\s*([A-Za-z_][A-Za-z0-9_]*)$/);
@@ -1947,7 +2074,9 @@ function buildCompletionItems(document, localIndex, position) {
         items.push({
           label: name,
           kind: def.kind === SymbolKind.Function ? CompletionItemKind.Method : CompletionItemKind.Field,
-          detail: def.detail,
+          detail: definitionOverloadCount(def) > 1
+            ? `${def.detail} (+${definitionOverloadCount(def) - 1} overloads)`
+            : def.detail,
           documentation: def.documentation || undefined
         });
       }
@@ -1966,7 +2095,9 @@ function buildCompletionItems(document, localIndex, position) {
       pushItem({
         label: name,
         kind: def.kind === SymbolKind.Function ? CompletionItemKind.Method : CompletionItemKind.Field,
-        detail: def.detail,
+        detail: definitionOverloadCount(def) > 1
+          ? `${def.detail} (+${definitionOverloadCount(def) - 1} overloads)`
+          : def.detail,
         documentation: def.documentation || undefined
       });
     }
@@ -1989,7 +2120,9 @@ function buildCompletionItems(document, localIndex, position) {
     pushItem({
       label: name,
       kind: def.kind === SymbolKind.Function ? CompletionItemKind.Function : CompletionItemKind.Reference,
-      detail: def.detail,
+      detail: definitionOverloadCount(def) > 1
+        ? `${def.detail} (+${definitionOverloadCount(def) - 1} overloads)`
+        : def.detail,
       documentation: def.documentation || undefined
     });
   }
@@ -1999,7 +2132,9 @@ function buildCompletionItems(document, localIndex, position) {
       pushItem({
         label: name,
         kind: def.kind === SymbolKind.Function ? CompletionItemKind.Function : CompletionItemKind.Reference,
-        detail: def.detail,
+        detail: definitionOverloadCount(def) > 1
+          ? `${def.detail} (+${definitionOverloadCount(def) - 1} overloads)`
+          : def.detail,
         documentation: def.documentation || undefined
       });
     }
@@ -2009,7 +2144,11 @@ function buildCompletionItems(document, localIndex, position) {
 }
 
 function formatHover(def) {
-  const parts = [`\`\`\`em4script\n${def.detail}\n\`\`\``];
+  const details = [];
+  for (const definition of getDefinitionVariants(def)) {
+    if (!details.includes(definition.detail)) details.push(definition.detail);
+  }
+  const parts = [`\`\`\`em4script\n${details.join('\n')}\n\`\`\``];
   if (def.documentation) {
     parts.push(def.documentation);
   }
@@ -2019,6 +2158,63 @@ function formatHover(def) {
       value: parts.join('\n\n')
     }
   };
+}
+
+function symbolName(symbol) {
+  if (!symbol) return '';
+  if (typeof symbol.name === 'string') return symbol.name;
+  if (Array.isArray(symbol.args) && typeof symbol.args[0] === 'string') return symbol.args[0];
+  return '';
+}
+
+function symbolUri(symbol) {
+  if (!symbol) return '';
+  if (symbol.location && typeof symbol.location.uri === 'string') return symbol.location.uri;
+  if (Array.isArray(symbol.args) && typeof symbol.args[3] === 'string') return symbol.args[3];
+  return '';
+}
+
+function symbolIdentity(symbol) {
+  const name = symbolName(symbol);
+  if (symbol && symbol.location) {
+    const start = symbol.location.range && symbol.location.range.start;
+    return `${symbol.location.uri}|${start ? start.line : 0}|${start ? start.character : 0}|${name}`;
+  }
+  if (symbol && Array.isArray(symbol.args)) {
+    const range = symbol.args[2];
+    const uri = symbol.args[3] || '';
+    const startLine = range && range.start ? range.start.line : (range && range.args ? range.args[0] : 0);
+    const startCharacter = range && range.start ? range.start.character : (range && range.args ? range.args[1] : 0);
+    return `${uri}|${startLine}|${startCharacter}|${name}`;
+  }
+  return name;
+}
+
+function buildWorkspaceSymbols(query) {
+  const normalizedQuery = (query || '').trim().toLowerCase();
+  const openDocumentUris = new Set(documentIndexes.keys());
+  const candidates = indexedSourceSymbols.filter((symbol) => !openDocumentUris.has(symbolUri(symbol)));
+  for (const indexed of documentIndexes.values()) {
+    candidates.push(...indexed.symbols);
+  }
+
+  const unique = new Map();
+  for (const symbol of candidates) {
+    const name = symbolName(symbol);
+    if (!name || (normalizedQuery && !name.toLowerCase().includes(normalizedQuery))) continue;
+    const identity = symbolIdentity(symbol);
+    if (!unique.has(identity)) unique.set(identity, symbol);
+  }
+
+  return [...unique.values()]
+    .sort((left, right) => {
+      const leftName = symbolName(left).toLowerCase();
+      const rightName = symbolName(right).toLowerCase();
+      const leftPrefix = normalizedQuery && leftName.startsWith(normalizedQuery) ? 0 : 1;
+      const rightPrefix = normalizedQuery && rightName.startsWith(normalizedQuery) ? 0 : 1;
+      return leftPrefix - rightPrefix || leftName.localeCompare(rightName);
+    })
+    .slice(0, 500);
 }
 
 function findAllOccurrencesInDocument(document, token, localIndex, scopeId) {
@@ -2352,6 +2548,7 @@ connection.onInitialize((params) => {
       hoverProvider: true,
       definitionProvider: true,
       documentSymbolProvider: true,
+      workspaceSymbolProvider: true,
       documentFormattingProvider: true,
       renameProvider: { prepareProvider: true },
       workspace: {
@@ -2457,6 +2654,8 @@ connection.onDocumentSymbol((params) => {
 
   return indexed.symbols;
 });
+
+connection.onWorkspaceSymbol((params) => buildWorkspaceSymbols(params.query));
 
 connection.onDocumentFormatting((params) => {
   const document = documents.get(params.textDocument.uri);
